@@ -619,7 +619,7 @@ def generate_display(row):
 
 def link_climb_ids(df, majora_meta_data_path, identifier: str):
     file = return_latest_file(majora_meta_data_path, identifier)
-    df_link = pd.read_csv(file, sep='\t', error_bad_lines=False, usecols=["central_sample_id", "anonymous_sample_id"])
+    df_link = pd.read_csv(file, sep='\t', on_bad_lines='skip', usecols=["central_sample_id", "anonymous_sample_id"])
     dfdf = df.merge(df_link, left_on="central_sample_id", right_on="anonymous_sample_id")
     dfdf = dfdf.drop_duplicates(subset=['anonymous_sample_id'])
     dfdf = dfdf.rename(columns={"central_sample_id_x": "central_sample_id", "central_sample_id_y": "cog_id"})
