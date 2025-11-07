@@ -104,10 +104,10 @@ scp -o 'ProxyJump=<username>.<surname>@158.119.147.128' -i <path-to-CLIMB-ssh-ke
 > [!Caution]
 > Make sure to activate the correct environment to avoid errors
 
-##### To run the notebook (lineage_line_groups_linkage.ipynb)
+##### To run the notebook (notebook/lineage_line_groups_linkage.ipynb)
   - Open editor of choice
   - Open the notebook
-  - Copy latest genomics_cell_merged file (from sharefolder, colindale_data/CPHL/Bioinformatics/01 Genomics Cell/03 Outbreaks/Epicell data release/) to relevant scan folder (optional)
+  - Copy the latest genomics_cell_merged file (from sharefolder, colindale_data/CPHL/Bioinformatics/01 Genomics Cell/03 Outbreaks/Epicell data release/) to relevant scan folder (optional)
   - Run the notebook
   - Fill in terminal prompts
   - Send data to COVE
