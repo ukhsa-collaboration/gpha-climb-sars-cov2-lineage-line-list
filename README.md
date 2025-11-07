@@ -1,4 +1,6 @@
-![](https://upload.wikimedia.org/wikipedia/fi/6/69/UKHSA_Logo.svg.png)
+
+<img src="(https://upload.wikimedia.org/wikipedia/fi/6/69/UKHSA_Logo.svg.png" width="100" height="100">
+
 # Title
 CLIMB SARs-CoV-2 Lineage Line List
 ---
