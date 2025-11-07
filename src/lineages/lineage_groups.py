@@ -170,6 +170,7 @@ def get_qualifying_lineages(start: None, end: None, threshold: float):
 
 
 def get_lineage_group(inputLineage, inputGroupDataframe):
+    aliasor = Aliasor()
     unaliased_input = aliasor.uncompress(inputLineage)
 
     candidate_list = filter(
@@ -250,3 +251,89 @@ def get_root_lineages():
     )
 
     return set(root_lineages)
+
+
+def generate_lineage_groups(start=None, end=None, filename=None, threshold=0.25):
+    start_time = datetime.datetime.now()
+    group_lineages = set()
+    if filename is not None:
+        try:
+            print(f"{datetime.datetime.now()} Reading previously defined lineages")
+            previously_generated_lineages = set(
+                json.loads(
+                    Path(filename).read_text()
+                ).values()
+            )
+            print(
+                f"{datetime.datetime.now()} Adding {len(previously_generated_lineages)} previously defined lineage groups")
+            group_lineages.update(previously_generated_lineages)
+        except Exception as e:
+            print(
+                f"{datetime.datetime.now()} Failed to parse lineages from {filename}\n{e}"
+            )
+            print(f"{datetime.datetime.now()} Run exited in {datetime.datetime.now() - start_time}")
+            sys.exit()
+
+        ## actual script
+    prevalent_lineages = get_qualifying_lineages(end, start, threshold)  ## generated based on prevalence
+    group_lineages.update(prevalent_lineages)
+    variant_lineages = (
+        get_defined_variant_lineages()
+    )  ## defined as VOC/VUIs once upon a time
+    group_lineages.update(variant_lineages)
+
+    ## we additionally need to add all root lineages (A, B and recombinants)
+    group_lineages.update(get_root_lineages())
+
+    ## that's about it, the rest is just
+    ## producing nice outputs
+    print(f"{datetime.datetime.now()} Final lineage list generated ({len(group_lineages)} lineage groups)")
+
+    ## begin "nice outputs"
+    declared_lineages = get_declared_lineages()  ## every lineage we've heard of
+
+    compare_lineages_key = cmp_to_key(compare_lineages)  ## key for sorting lineages
+
+    aliasor = Aliasor()
+
+    group_lineages_df = pd.DataFrame(
+        [(x, aliasor.uncompress(x)) for x in group_lineages]
+    ).rename({0: "lineage", 1: "unaliased_lineage"}, axis=1)
+
+    group_lineages_df["lineage_level"] = group_lineages_df["unaliased_lineage"].apply(
+        lambda x: len(x.split("."))
+    )
+
+    ## okay, now assign every lineage we've ever heard of to a group
+    print(f"{datetime.datetime.now()} Assigning every lineage to a group")
+    result_df = pd.DataFrame(
+        [(x, aliasor.uncompress(x)) for x in declared_lineages]
+    ).rename({0: "lineage", 1: "unaliased_lineage"}, axis=1)
+
+    result_df["lineage_group"] = result_df["lineage"].apply(
+        lambda x: get_lineage_group(x, group_lineages_df)
+    )
+
+    ## sort the dataframe
+    ## it would be nice if we could use compare_lineages_key
+    ## but this will do
+    result_df = result_df.sort_values("unaliased_lineage")
+
+    print(f"{datetime.datetime.now()} Writing out assignments CSV")
+    result_df.to_csv(
+        f"groups_{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.csv", index=False
+    )
+
+    print(f"{datetime.datetime.now()} Writing out assignments JSON")
+    with open(
+            f"lineage_group_lookup_{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.json",
+            "w",
+    ) as outfile:
+        outfile.write(
+            json.dumps(
+                dict(result_df[["lineage", "lineage_group"]].to_records(index=False)),
+                indent=4,
+            )
+        )
+
+    print(f"{datetime.datetime.now()} Run completed in {datetime.datetime.now() - start_time}")

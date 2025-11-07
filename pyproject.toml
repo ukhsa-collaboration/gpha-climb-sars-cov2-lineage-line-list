@@ -1,10 +1,10 @@
 [project] # Update all fields in this section
-name = "project-name-here" 
-version = "0.1.0" 
+name = "gpha-climb-sars-cov2-lineage-line-list"
+version = "3.1.0"
 description = "Short description here"
-authors = [{name = "Author name", email = "email.address@example.com"}] 
-requires-python = ">=3.12" 
-dependencies = ["pandas", "pyyaml", "climb-onyx-client"] 
+authors = [{name = "Mike Brown", email = "michael.d.brown@ukhsa.gov.uk"}]
+requires-python = ">=3.7.6"
+dependencies = ["pandas", "pyyaml", "climb-onyx-client", "python-dateutil", "requests", "pango-aliasor"]
 
 [tool.setuptools.dynamic]
 version = {attr = "project_name_here.__version__"} # Add underscore separated repo name here
@@ -17,7 +17,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts] # Update with main repo script here
-qc_sample = "mscape_template.mscape_script:main"
+qc_sample = "main:main"
 
 [tool.ruff.lint] # Lint rules to follow - add or delete if required
 select = [

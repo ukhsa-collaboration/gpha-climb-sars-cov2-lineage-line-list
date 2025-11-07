@@ -1,57 +1,103 @@
-# mscape-template
+![](https://upload.wikimedia.org/wikipedia/fi/6/69/UKHSA_Logo.svg.png)
+# Title
+CLIMB SARs-CoV-2 Lineage Line List
+---
 
-This repository is a template for creating new repositories containing  
-code that will run on mSCAPE. It serves as a guide for code layout  
-and files will need amending to fit the repo purpose.  
+## Table of Contents
 
-As a minimum, mSCAPE repositories should include the following:
-- Code to be in src/ layout 
-- tests/ folder at same level as src/ 
-- .github/ folder containing workflows and a pull request template
-- .gitignore file
-- pyproject.toml file
-- .pre-commit-hooks.yaml
+- [Info](#info)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Install](#install)
+- [Usage](#usage)
+- [Commands](#commands)
+- [Troubleshooting](#troubleshooting)
+- [Change-log](#change-log)
+- [To-do](#to-do)
+---
 
-This repo follows the above structure and contains examples of the files  
-referenced above.
+## Info
 
-A ssuggested layout for repo READMEs is included below. The guidance  
-documentation contains further information on required repository  
-structure, development cycles, and making pull requests. Please read  
-this guidance document before using the template.
+| Name         | CLIMB SARs-CoV-2 Lineage Line List |
+|--------------|------------------------------------|
+| Version      | 3.1                                |
+| Last Updated | 04.11.2025                         |
+| Author(s)    | Mike Brown, Kate Howell            |
+| Contact      | michael.d.brown@ukhsa.gov.uk       |
+| Summary      | Data pipleine that produces epi-lineage linelist for COVE to produce epi-curve info for presentation at HS (to be part run on CLIMB) |
 
-# mscape-template
+---
 
-Brief description of project here
+## Features
 
-## Installation
+```mermaid
+graph LR
+A[fasta files] -- Link text --> B((Circle))
+A --> C(Round Rect)
+B --> D{Rhombus}
+C --> D
+```
 
-Add installation instructions here. Ideally include commands to make  
-the process as easy as possible for users.  
+---
 
-Clone repo and create environment:  
-`git clone git@github.com:ukhsa-collaboration/mscape-template.git`  
+## Requirements
 
-`conda env create -n mscape_template `  
+> [!Warning]
+> Avoid ...
 
-`conda activate mscape_template`  
+---
 
-Installation for users:  
-`cd mscape-template`  
-`pip install .`
+## Install
 
-Installation for developers (installs code in editable mode):  
-`cd mscape-template`  
-`pip install --editable '.[dev]'`
+```bash
+cd path/to/directory
+git clone @
+pip install .
+etc.
+```
+
+> [!Tip]
+> It is reccomended to ...
+
+---
 
 ## Usage
 
-Include command line arguments (e.g. the output displayed when using -h)  
-for reference. Example commands can also be helpful.
+> [!Important]
+> Make sure to acitivate the right environment to avoid errors
 
-## Other sections
+```bash
+conda activate env_name
+```
 
-Add other sections as appropriate for your repo. This may include  
-instructions on updating the repo, instructions on adding new  
-references, troubleshooting etc. 
+---
 
+## Commands
+
+> [!Note]
+> Commands can be viewed in terminal via the '-help' command
+
+- --command[-abbreviation]: about the command <br>
+- --index[-i]: about the index command
+
+---
+
+## Troubleshooting
+
+> [!Caution]
+> Do not ...
+
+---
+
+## Change-log
+
+---
+
+## To-do
+
+- [x] move related lineage grouping files into current repo
+- [x] restructure repo to follow of GPHA standards
+- [ ] reformat auto_linelist.py and move away from stdout calls
+- [ ] \(Optional) task
+
+---
