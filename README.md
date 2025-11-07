@@ -18,12 +18,12 @@ CLIMB SARs-CoV-2 Lineage Line List
 
 ## Info
 
-| Name         | CLIMB SARs-CoV-2 Lineage Line List |
-|--------------|------------------------------------|
-| Version      | 3.1                                |
-| Last Updated | 04.11.2025                         |
-| Author(s)    | Mike Brown, Kate Howell            |
-| Contact      | michael.d.brown@ukhsa.gov.uk       |
+| Name         | CLIMB SARs-CoV-2 Lineage Line List                                                  |
+|--------------|-------------------------------------------------------------------------------------|
+| Version      | 3.1                                                                                 |
+| Last Updated | 04.11.2025                                                                          |
+| Author(s)    | Mike Brown, Kate Howell, Ashley Shalloe                                             |
+| Contact      | michael.d.brown@ukhsa.gov.uk, kate.howell@ukhsa.gov.uk, ashley.shalloe@ukhsa.gov.uk |
 | Summary      | Data pipleine that produces epi-lineage linelist for COVE to produce epi-curve info for presentation at HS (to be part run on CLIMB) |
 
 ---
@@ -50,7 +50,6 @@ C --> D
 ---
 
 ## Install
-
 - Open terminal
 - Login to CLIMB
 - Run:
@@ -62,11 +61,10 @@ pip install .
 ```
 > [!Tip]
 > It is reccomended to run in screen or TMUX session in case of crash
-
 ---
 
 ## Usage
-- To run the pipeline
+##### To run the pipeline
   - Navigate to gpha-climb-sars-cov2-lineage-line-list folder
   - Activate the environment
   - Run:
@@ -75,7 +73,7 @@ cd gpha-climb-sars-cov2-lineage-line-list
 conda activate <env_name>
 python main.py
 ```
-- To download to local machine
+##### To download to local machine
   - Open a new terminal on local machine
   - Navigate to desired parent directory
   - Run:
@@ -87,23 +85,32 @@ scp -o 'ProxyJump=<username>.<surname>@158.119.147.128' -i <path-to-CLIMB-ssh-ke
 
 > [!Caution]
 > Make sure to activate the correct environment to avoid errors
+
+##### To run the notebook (lineage_line_groups_linkage.ipynb)
+  - Open editor of choice
+  - Open the notebook
+  - Copy latest genomics_cell_merged file (from sharefolder, colindale_data/CPHL/Bioinformatics/01 Genomics Cell/03 Outbreaks/Epicell data release/) to relevant scan folder (optional)
+  - Run the notebook
+  - Fill in terminal prompts
+  - Send data to COVE
+> [!Tip]
+> Linux: when asked for user number only second value is required following running of -ls /run/user
 ---
 
 ## Commands
-
 > [!Note]
 > Commands can be viewed in terminal via the '-help' command
 
 - --command[-abbreviation]: about the command <br>
 - --index[-i]: about the index command
-
 ---
 
 ## Troubleshooting
 
 > [!Important]
-> Do not ...
-
+> Make sure all paths are entered correctly <br>
+> Make sure to activate the correct environment to avoid errors <br>
+> Linux: when asked for user number only second value is required following running of -ls /run/user <br>
 ---
 
 ## Change-log
@@ -114,7 +121,8 @@ scp -o 'ProxyJump=<username>.<surname>@158.119.147.128' -i <path-to-CLIMB-ssh-ke
 
 - [x] move related lineage grouping files into current repo
 - [x] restructure repo to follow of GPHA standards
-- [ ] reformat auto_linelist.py and move away from stdout calls
+- [x] reformat auto_linelist.py and move away from stdout calls
+- [ ] \(Optional) convert lineage_line_groups_linkage.ipynb notebook -> script
 - [ ] \(Optional) task
 
 ---
