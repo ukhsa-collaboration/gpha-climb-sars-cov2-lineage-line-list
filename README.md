@@ -41,35 +41,52 @@ C --> D
 ---
 
 ## Requirements
-
 > [!Warning]
-> Avoid ...
-
+> To run it is neccessary to have obtained:
+> Access to CLIMB <br>
+> Access to Sharedrive folders: <br>
+> - 01 Genomics Cell (required) <br>
+> - COVE folder (optional) <br>
 ---
 
 ## Install
 
+- Open terminal
+- Login to CLIMB
+- Run:
 ```bash
-cd path/to/directory
-git clone @
+git clone https://github.com/ukhsa-collaboration/gpha-climb-sars-cov2-lineage-line-list.git
+cd gpha-climb-sars-cov2-lineage-line-list
+conda create -n covid-ll
 pip install .
-etc.
 ```
-
 > [!Tip]
-> It is reccomended to ...
+> It is reccomended to run in screen or TMUX session in case of crash
 
 ---
 
 ## Usage
-
-> [!Important]
-> Make sure to acitivate the right environment to avoid errors
-
+- To run the pipeline
+  - Navigate to gpha-climb-sars-cov2-lineage-line-list folder
+  - Activate the environment
+  - Run:
 ```bash
-conda activate env_name
+cd gpha-climb-sars-cov2-lineage-line-list
+conda activate <env_name>
+python main.py
 ```
+- To download to local machine
+  - Open a new terminal on local machine
+  - Navigate to desired parent directory
+  - Run:
+```bash
+scp -o 'ProxyJump=<username>.<surname>@158.119.147.128' -i <path-to-CLIMB-ssh-key> -r climb-covid19-brownm2@bham.covid19.climb.ac.uk:gpha-climb-sars-cov2-lineage-line-list/<yyymmdd>-covid-ll .
+```
+> [!Tip]
+> Default path-to-CLIMB-ssh-key: ~/SSH_Key
 
+> [!Caution]
+> Make sure to activate the correct environment to avoid errors
 ---
 
 ## Commands
@@ -84,7 +101,7 @@ conda activate env_name
 
 ## Troubleshooting
 
-> [!Caution]
+> [!Important]
 > Do not ...
 
 ---
