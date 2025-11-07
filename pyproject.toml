@@ -17,7 +17,10 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts] # Update with main repo script here
-qc_sample = "main:main"
+covid-ll = "src.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
 
 [tool.ruff.lint] # Lint rules to follow - add or delete if required
 select = [

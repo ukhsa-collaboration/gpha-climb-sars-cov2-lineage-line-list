@@ -88,7 +88,7 @@ pip install .
 ```bash
 cd gpha-climb-sars-cov2-lineage-line-list
 conda activate <env_name>
-python main.py
+python __main__.py
 ```
 ##### To download to local machine
   - Open a new terminal on local machine
