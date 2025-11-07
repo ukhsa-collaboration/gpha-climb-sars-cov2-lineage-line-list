@@ -75,75 +75,75 @@ def run_scan():
     move_files(out_dir)
     print(f"{datetime.now()} Lineage prevalence and line list files should be ready")
 
-if __name__ == "__main__":
-    n = 6
-    start = datetime.today() - timedelta(days=n * 7)
-    start = datetime.date(start)
-    start = start.strftime("%Y%m%d")
-
-    print(start)
-
-    ## pre-flight checks
-    ## do we have all the scripts we need?
-    assert os.path.isfile("lineage_groups/generate_lineage_groups.py")
-    ##assert os.path.isfile(
-    ##    "sars_cov2_lineage_prevalence_climb/lineage_prevalence_CLIMB4.py"
-    ##)
-    assert os.path.isfile("linprev_12months.py") or os.path.isfile(
-        "linprev_12months.py"
-    )
-
-    ## create the lineage groups, needs to run with two different date ranges / thresholds
-    cmd1 = f"python lineage_groups/generate_lineage_groups.py --end {start} --threshold 0.25"
-    subprocess.run(
-        cmd1, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, check=True
-    )
-
-    proc = subprocess.Popen(
-        "ls -Art *json | tail -n 1",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        shell=True,
-    )
-    stdout, stderr = proc.communicate()
-    json = stdout.decode("utf-8").replace("\\n", "")
-
-    cmd2 = f"python lineage_groups/generate_lineage_groups.py --start {start} --threshold 0.05 {json}"
-    print("Lineage groups generated...")
-
-    ## run the prevalence tables for the lineage line list
-    if os.path.isfile("linprev_12months.py"):
-        ## if the script is in this directory
-        cmd3 = "python linprev_12months.py"
-    else:
-        ## else assume it is in a subfolder
-        cmd3 = "python climb-lineage-line-list/linprev_12months.py"
-    print("Lineage prevalence for line list generated...")
-
-    ## run the prevalence tables for the 12-week prevalence plot
-    ## cmd4 = "python sars_cov2_lineage_prevalence_climb/lineage_prevalence_CLIMB4.py"
-
-    ## actually run the rest of the commands
-    subprocess.run(
-        cmd2, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, check=True
-    )
-    subprocess.run(
-        cmd3, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, check=True
-    )
-    ##subprocess.run(
-    ##    cmd4, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, check=True
-    ##)
-    print("Lineage 12 week prevalence tables generated...")
-    print("Lineage prevalence and line list files should be ready")
-
-    today = datetime.today()
-    today = today.strftime("%Y%m%d")
-    folder = f'{today}-covid-ll'
-    os.mkdir(folder)
-    csv_list = glob.glob('*csv')
-    json_list = glob.glob('*.json')
-
-    for file in csv_list:
-        shutil.move(file, folder)
-    for file in json_list:
-        shutil.move(file, folder)
+# if __name__ == "__main__":
+#     n = 6
+#     start = datetime.today() - timedelta(days=n * 7)
+#     start = datetime.date(start)
+#     start = start.strftime("%Y%m%d")
+#
+#     print(start)
+#
+#     ## pre-flight checks
+#     ## do we have all the scripts we need?
+#     assert os.path.isfile("lineage_groups/generate_lineage_groups.py")
+#     ##assert os.path.isfile(
+#     ##    "sars_cov2_lineage_prevalence_climb/lineage_prevalence_CLIMB4.py"
+#     ##)
+#     assert os.path.isfile("linprev_12months.py") or os.path.isfile(
+#         "linprev_12months.py"
+#     )
+#
+#     ## create the lineage groups, needs to run with two different date ranges / thresholds
+#     cmd1 = f"python lineage_groups/generate_lineage_groups.py --end {start} --threshold 0.25"
+#     subprocess.run(
+#         cmd1, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, check=True
+#     )
+#
+#     proc = subprocess.Popen(
+#         "ls -Art *json | tail -n 1",
+#         stdout=subprocess.PIPE,
+#         stderr=subprocess.PIPE,
+#         shell=True,
+#     )
+#     stdout, stderr = proc.communicate()
+#     json = stdout.decode("utf-8").replace("\\n", "")
+#
+#     cmd2 = f"python lineage_groups/generate_lineage_groups.py --start {start} --threshold 0.05 {json}"
+#     print("Lineage groups generated...")
+#
+#     ## run the prevalence tables for the lineage line list
+#     if os.path.isfile("linprev_12months.py"):
+#         ## if the script is in this directory
+#         cmd3 = "python linprev_12months.py"
+#     else:
+#         ## else assume it is in a subfolder
+#         cmd3 = "python climb-lineage-line-list/linprev_12months.py"
+#     print("Lineage prevalence for line list generated...")
+#
+#     ## run the prevalence tables for the 12-week prevalence plot
+#     ## cmd4 = "python sars_cov2_lineage_prevalence_climb/lineage_prevalence_CLIMB4.py"
+#
+#     ## actually run the rest of the commands
+#     subprocess.run(
+#         cmd2, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, check=True
+#     )
+#     subprocess.run(
+#         cmd3, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, check=True
+#     )
+#     ##subprocess.run(
+#     ##    cmd4, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, check=True
+#     ##)
+#     print("Lineage 12 week prevalence tables generated...")
+#     print("Lineage prevalence and line list files should be ready")
+#
+#     today = datetime.today()
+#     today = today.strftime("%Y%m%d")
+#     folder = f'{today}-covid-ll'
+#     os.mkdir(folder)
+#     csv_list = glob.glob('*csv')
+#     json_list = glob.glob('*.json')
+#
+#     for file in csv_list:
+#         shutil.move(file, folder)
+#     for file in json_list:
+#         shutil.move(file, folder)
