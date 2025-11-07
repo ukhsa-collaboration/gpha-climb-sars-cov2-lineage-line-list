@@ -98,10 +98,9 @@ scp -o 'ProxyJump=<username>.<surname>@158.119.147.128' -i <path-to-CLIMB-ssh-ke
 
 ## Commands
 > [!Note]
-> Commands can be viewed in terminal via the '-help' command
-
-- --command[-abbreviation]: about the command <br>
-- --index[-i]: about the index command
+> Commands have been removed for simplicity <br>
+> Paths have been hardcoded <br>
+> If change to path(s) required, see src modules
 ---
 
 ## Troubleshooting
