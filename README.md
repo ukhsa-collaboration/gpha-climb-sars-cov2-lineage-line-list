@@ -31,10 +31,28 @@
 
 ```mermaid
 graph LR
-A[fasta files] -- Link text --> B((Circle))
-A --> C(Round Rect)
-B --> D{Rhombus}
-C --> D
+A((CLIMB COVID)) -- get data --> B[all_metadata.csv]
+B -- pull columns --> C[central_sample_id,
+collection_date,
+adm1,
+usher_lineage,
+lineage,
+mutations]
+G((Sharedrive)) -- get data --> H[genomics_cell_merged]
+
+C --> D[collection_date]
+C --> E[mutations]
+C --> F[usher_lineage]
+
+D -- crop data --> Z[lineage_metadata]
+E -- mutations of interest --> Z[lineage_metadata]
+F -- lineage collapser --> Z[lineage_metadata]
+
+Z[lineage_metadata] --> i{merge}
+H[genomics_cell_merged] --> i{merge}
+
+i --> j(line_epi_line_list.csv)
+
 ```
 
 ---
