@@ -73,7 +73,7 @@ i --> j(line_epi_line_list.csv)
 ```bash
 git clone https://github.com/ukhsa-collaboration/gpha-climb-sars-cov2-lineage-line-list.git
 cd gpha-climb-sars-cov2-lineage-line-list
-conda create -n covid-ll
+conda create -n covid-ll python=3.7.6
 pip install .
 ```
 > [!Tip]
