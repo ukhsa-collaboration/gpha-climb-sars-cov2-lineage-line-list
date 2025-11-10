@@ -1,5 +1,5 @@
 
-# <img src="https://upload.wikimedia.org/wikipedia/fi/6/69/UKHSA_Logo.svg.png" width="75" height="75"> CLIMB SARs-CoV-2 Lineage Line List 
+# <img src="https://upload.wikimedia.org/wikipedia/fi/6/69/UKHSA_Logo.svg.png" width="75" height="75"> GPHA CLIMB SARs-CoV-2 Lineage Line List 
 ---
 
 ## Table of Contents
@@ -17,7 +17,7 @@
 
 ## Info
 
-| Name         | CLIMB SARs-CoV-2 Lineage Line List                                                  |
+| Name         | GPHA CLIMB SARs-CoV-2 Lineage Line List                                             |
 |--------------|-------------------------------------------------------------------------------------|
 | Version      | 3.1                                                                                 |
 | Last Updated | 04.11.2025                                                                          |
