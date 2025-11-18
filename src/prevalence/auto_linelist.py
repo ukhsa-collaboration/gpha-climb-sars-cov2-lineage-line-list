@@ -4,6 +4,7 @@ import subprocess
 import os
 import glob
 import shutil
+import glob
 
 from src.lineages.lineage_groups import generate_lineage_groups
 from src.prevalence.lineage_prevalence import generate_lineage_prevalence
@@ -47,9 +48,10 @@ def run_line_list(n_wks=6):
     run_start = run_start.strftime("%Y%m%d")
     print(f"{datetime.now()} Setting start date: {run_start}")
     generate_lineage_groups(end=run_start)
-
-    #json=get_json()
-    #generate_lineage_groups(start=run_start, threshold=0.05, filename=json)
+    
+    # run with previous json as backround to lower threshold entries
+    path_to_latest_json = sorted(glob.glob('lineage_group_lookup*.json'))[-1]
+    generate_lineage_groups(start=run_start, threshold=0.05, filename=path_to_latest_json)
     print(f"{datetime.now()} Lineage groups generated")
 
 
