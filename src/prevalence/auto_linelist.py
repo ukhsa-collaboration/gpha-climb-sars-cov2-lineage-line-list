@@ -30,16 +30,11 @@ def move_files(out_dir):
         shutil.move(jsons, out_dir)
 
 
-def get_json():
-    proc = subprocess.Popen(
-        "ls -Art *json | tail -n 1",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        shell=True,
-    )
-    stdout, stderr = proc.communicate()
-    json = stdout.decode("utf-8")#.replace("\\n", "")
-    return json
+def get_path_to_latest_json():
+    """
+    Get the JSON with the latest date in the filename
+    """
+    return sorted(glob.glob("lineage_group_lookup*.json"))[-1]
 
 
 def run_line_list(n_wks=6):
@@ -49,8 +44,8 @@ def run_line_list(n_wks=6):
     print(f"{datetime.now()} Setting start date: {run_start}")
     generate_lineage_groups(end=run_start)
     
-    # run with previous json as backround to lower threshold entries
-    path_to_latest_json = sorted(glob.glob('lineage_group_lookup*.json'))[-1]
+    # run with previous json as background to lower threshold entries
+    path_to_latest_json =  get_path_to_latest_json()
     generate_lineage_groups(start=run_start, threshold=0.05, filename=path_to_latest_json)
     print(f"{datetime.now()} Lineage groups generated")
 
