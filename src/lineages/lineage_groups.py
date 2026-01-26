@@ -47,7 +47,7 @@ def compare_lineages(lineageA, lineageB):
     return 0
 
 
-def get_qualifying_lineages(start: None, end: None, threshold: float):
+def get_qualifying_lineages(*, start=None, end=None, threshold=None):
     ## read in latest metadata file
     print(f"{datetime.datetime.now()} Parsing cog_*_all_metadata.csv")
     meta_df = pd.read_csv(
@@ -275,7 +275,7 @@ def generate_lineage_groups(*, start=None, end=None, filename=None, threshold=0.
             sys.exit()
 
         ## actual script
-    prevalent_lineages = get_qualifying_lineages(end, start, threshold)  ## generated based on prevalence
+    prevalent_lineages = get_qualifying_lineages(start=start, end=end, threshold=threshold)  ## generated based on prevalence
     group_lineages.update(prevalent_lineages)
     variant_lineages = (
         get_defined_variant_lineages()
