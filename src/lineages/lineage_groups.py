@@ -253,7 +253,7 @@ def get_root_lineages():
     return set(root_lineages)
 
 
-def generate_lineage_groups(start=None, end=None, filename=None, threshold=0.25):
+def generate_lineage_groups(*, start=None, end=None, filename=None, threshold=0.25):
     start_time = datetime.datetime.now()
     group_lineages = set()
     if filename is not None:
