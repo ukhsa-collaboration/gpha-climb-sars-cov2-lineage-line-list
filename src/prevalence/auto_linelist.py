@@ -6,12 +6,13 @@ import glob
 import shutil
 import glob
 import configparser
-
+from pathlib import Path
 from src.lineages.lineage_groups import generate_lineage_groups
 from src.prevalence.lineage_prevalence import generate_lineage_prevalence
+from typing import Union
 
 
-def make_output_folder():
+def make_output_folder() -> str:
     date_today = datetime.today()
     date_today = date_today.strftime("%Y%m%d")
     out_dir = f'{date_today}-covid-ll'
@@ -19,35 +20,37 @@ def make_output_folder():
     os.mkdir(out_dir)
     return out_dir
 
-def move_files(out_dir):
+def move_files(out_dir) -> None:
+    '''
+    move files from cwd to designated outdir.
+    todo possibly worth adding an option to set the dir? or add __file__ for relative paths
+    '''
     list_csv = glob.glob('*csv')
     list_json = glob.glob('*.json')
     str_csv = ", ".join(list_csv)
     str_json = ", ".join(list_json)
+    files = list(list_csv) + list(list_json)
+
     print(f"{datetime.now()} Moving generated files to output directory: {str_csv} + {str_json} -> {out_dir}")
-    for csv in list_csv:
-        shutil.move(csv, out_dir)
-    for jsons in list_json:
-        shutil.move(jsons, out_dir)
+    for file in files:
+        shutil.move(file, out_dir)
 
 
-def get_json():
-    proc = subprocess.Popen(
-        "ls -Art *json | tail -n 1",
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        shell=True,
-    )
-    stdout, stderr = proc.communicate()
-    json = stdout.decode("utf-8")#.replace("\\n", "")
-    return json
+def get_json() -> Union[str, None]:
+    '''
+    grab all files ending in ,json, get the most recent based on os.path.getmtime
+    '''
+    json_files = glob.glob('*.json')
+    if not json_files:
+        return None
+
+    latest = max(json_files, key=os.path.getmtime)
+    return latest
 
 
-def run_line_list(n_wks=6):
-    run_start = datetime.today() - timedelta(days=n_wks * 7)
-    run_start = datetime.date(run_start)
-    run_start = run_start.strftime("%Y%m%d")
-    print(f"{datetime.now()} Setting start date: {run_start}")
+
+def run_line_list(n_wks=6) -> None:
+    run_start = get_run_start(n_wks)
     generate_lineage_groups(end=run_start)
     
     # run with previous json as backround to lower threshold entries
@@ -56,7 +59,15 @@ def run_line_list(n_wks=6):
     print(f"{datetime.now()} Lineage groups generated")
 
 
-def run_lineage_prevalence(save_loc:str, path_to_alignment:str, path_to_metadata:str):
+def get_run_start(n_wks) -> str:
+    run_start = datetime.today() - timedelta(days=n_wks * 7)
+    run_start = datetime.date(run_start)
+    run_start = run_start.strftime("%Y%m%d")
+    print(f"{datetime.now()} Setting start date: {run_start}")
+    return run_start
+
+
+def run_lineage_prevalence(save_loc:str, path_to_alignment:str, path_to_metadata:str) -> None:
     print(f"{datetime.now()} Generating lineage prevalence data")
     generate_lineage_prevalence(file_path=path_to_alignment,
                                 file_path2=path_to_metadata,
@@ -67,7 +78,7 @@ def run_commands():
     pass
 
 
-def run_scan():
+def run_scan() -> None:
     configParser = configparser.RawConfigParser()
     latest_alignments = configParser.get('file-paths','latest_alignments')
     latest_general = configParser.get('file-paths','latest_general')
