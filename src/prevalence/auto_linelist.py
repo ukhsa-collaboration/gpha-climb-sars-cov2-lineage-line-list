@@ -5,6 +5,7 @@ import os
 import glob
 import shutil
 import glob
+import configparser
 
 from src.lineages.lineage_groups import generate_lineage_groups
 from src.prevalence.lineage_prevalence import generate_lineage_prevalence
@@ -67,13 +68,14 @@ def run_commands():
 
 
 def run_scan():
-    climb_latest_alignments = "/cephfs/covid/bham/results/msa/latest/alignments/"
-    climb_latest_general = "/cephfs/covid/artifacts/elan/latest/"
+    configParser = configparser.RawConfigParser()
+    latest_alignments = configParser.get('file-paths','latest_alignments')
+    latest_general = configParser.get('file-paths','latest_general')
     out_dir = make_output_folder()
     run_line_list()
     run_lineage_prevalence(save_loc=out_dir,
-                           path_to_alignment=climb_latest_alignments,
-                           path_to_metadata=climb_latest_general)
+                           path_to_alignment=latest_alignments,
+                           path_to_metadata=latest_general)
     move_files(out_dir)
     print(f"{datetime.now()} Lineage prevalence and line list files should be ready")
 
