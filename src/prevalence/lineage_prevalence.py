@@ -4,11 +4,9 @@ import datetime
 from typing import Optional, Union
 import logging
 from dateutil import relativedelta as rd
-import requests
-import json
 import glob
 import os
-
+from src.prevalence.lineage_prevalence_class import LineageCollapser
 
 # %% copied genomicslib.utilities functions
 
@@ -67,18 +65,18 @@ def calculate_percents(
     if groupby_cols:
         pct_series = (
             data[counts_col]
-                .div(data
-                     .groupby(groupby_cols)
-                     [counts_col]
-                     .transform('sum')
-                     )
-                .mul(100)
+            .div(data
+                 .groupby(groupby_cols)
+                 [counts_col]
+                 .transform('sum')
+                 )
+            .mul(100)
         )
     else:
         pct_series = (
             data[counts_col]
-                .div(data[counts_col].sum())
-                .mul(100)
+            .div(data[counts_col].sum())
+            .mul(100)
         )
     return pct_series
 
@@ -115,393 +113,15 @@ def mask_less_prevalent_values(
     return masked
 
 
-def get_lineage_level(lineage_series: pd.Series) -> pd.Series:
-    """
-    Given pandas series with lineages, returns series of integers matching
-    depth of lineage name.
 
-    Examples
-    --------
-    B.1                  2
-    B.1.1.7     >>       4
-    AY.1                 2
-    """
-    return (
-        lineage_series
-            .str.split('.')
-            .map(lambda x: len(x if isinstance(x, list) else [x]))  # deal w/ NaNs
-    )
-
-
-class PangoAliasError(Exception):
-    pass
-
-
-def get_pango_aliases(do_filter=True) -> dict:
-    """
-    Return dict of Pango lineage alias: full lineage name from COG-UK website.
-    """
-    try:
-        with requests.get(
-                "https://raw.githubusercontent.com/cov-lineages/pango-designation/master/pango_designation/alias_key.json") as url:
-            data = json.loads(url.text)
-            if do_filter:
-                pango_aliases_filter = dict(
-                    [t for t in data.items() if not t[0].startswith('X') and t[0] not in ['A', 'B']])
-                return pango_aliases_filter
-            else:
-                return data
-    except:
-        raise PangoAliasError('Cannot generate alias dict from json file')
-
-
-def reverse_alias_dict(alias_dict):
-    """
-    When changing lineages back to alias, dict needs to be sorted by lineage length to cope with nested alias
-    e.g. B.1.1.529.5.2.1.5 == BA.5.2.1.5 == BF.5
-    Therefore need to replace B.1.1.529.5.2.1 in list before replacing B.1.1.529
-    """
-    alias_swap = {v: k for k, v in alias_dict.items()}
-    sorted_swap = dict()
-    for k in sorted(alias_swap, key=len, reverse=True):
-        sorted_swap[k] = alias_swap[k]
-    return sorted_swap
-
-
-def unalias_lineage(lineage_converter, lineage_series):
-    replaced_series = pd.Series(lineage_series.copy())
-    for to_repl, repl_with in lineage_converter.items():
-        # match lineage exact match and sub-lineages
-        lin_match = (
-                replaced_series.str.startswith(f'{to_repl}.') &
-                (replaced_series != to_repl)
-        )
-        # replace matched sub-string by replacement sub-string (avoiding
-        # slower regex substitution)
-        replaced_series.loc[lin_match] = (
-                repl_with + replaced_series.loc[lin_match].str[len(to_repl):]
-        )
-    return replaced_series
-
-
-class LineageCollapser:
-    # this is set to None so that importing the lib is not prevented if there is a problem with generating the alias
-    # dict (e.g. web page availability) and will only produce an error when the dict is actually required
-    pango_aliases = None  # alias: lineage
-
-    def __init__(
-            self, dataframe: pd.DataFrame, lineages_col: Union[str, int],
-            totals_col: Union[str, int], min_level: int = 2,
-            cols_to_aggregate: Union[str, list, None] = None,
-            protect_lineages: Union[list, tuple, set, pd.Series, None
-            ] = None, collapsed_col: str = 'collapsed'
-    ) -> None:
-        assert isinstance(dataframe, pd.DataFrame), (
-            'dataframe should be a pandas data frame.')
-        assert isinstance(lineages_col, (str, int)), (
-            f'lineage_column_name should be a str or int. {type(lineages_col)}'
-            f' given.'
-        )
-        dataframe_cols = ', '.join(dataframe.columns.to_list())
-        assert lineages_col in dataframe.columns, (
-            f'{lineages_col} is not a column in the dataframe provided.'
-            f' columns in dataframe: {dataframe_cols}.'
-        )
-        assert isinstance(totals_col, (str, int)), (
-            f'totals_column_name should be a str or int. '
-            f'{type(totals_col)} given')
-        assert totals_col in dataframe.columns, (
-            f'{totals_col} is not a column in the dataframe provided.'
-            f' columns in dataframe: {dataframe_cols}.'
-        )
-        assert isinstance(min_level, int), (
-            f'min_level should be an integer. {type(min_level)} given.')
-        if isinstance(cols_to_aggregate, str):
-            cols_to_aggregate = [cols_to_aggregate]
-        elif cols_to_aggregate is None:
-            cols_to_aggregate = []
-        else:
-            cols_to_aggregate = cols_to_aggregate
-        assert isinstance(cols_to_aggregate, list), (
-            'Extra columns should be None, str or list.'
-        )
-        for col in cols_to_aggregate:
-            assert isinstance(col, (str, int)), (
-                f'{col} should be a str or int. {type(collapsed_col)} '
-                f'given.'
-            )
-            assert col in dataframe.columns, (
-                f'{col} is not a column in the dataframe provided.'
-                f' columns in dataframe: {dataframe_cols}.'
-            )
-        if protect_lineages is not None:
-            protect_lineages = pd.Series(protect_lineages, dtype='object')
-        assert (
-                protect_lineages is None
-                or (isinstance(protect_lineages, pd.Series)
-                    and not protect_lineages.empty)), (
-            f'protect_lineages should be None, list, tuple, set or pandas '
-            f'series. {type(protect_lineages)} given: {protect_lineages}'
-        )
-        assert isinstance(collapsed_col, (str, int)), (
-            f'collapsed_col should be a str or int. {type(collapsed_col)} '
-            f'given.'
-        )
-        assert collapsed_col not in dataframe.columns, (
-            f'{collapsed_col} should not be a column in the dataframe provided'
-            f' as it will be created to store the lineage each record will be '
-            f'collapsed into.'
-        )
-
-        # create a copy of the dataframe and setup a copy of the column
-        # containing the lineage info. Lineage aliases are replaced with the
-        # corresponding pangolin lineages so collapser works on real levels
-        self.data = dataframe.copy()
-        self.lineage_col = lineages_col
-        self.data[collapsed_col] = self.alias_to_lineage(
-            self.data[self.lineage_col].copy(), reverse=False)
-        self.totals_col = totals_col
-        self.min_level = min_level
-        if cols_to_aggregate:
-            self.cols_to_aggregate = [
-                col for col in cols_to_aggregate
-                if col not in (lineages_col, collapsed_col)
-            ]
-        else:
-            self.cols_to_aggregate = []
-        if protect_lineages is not None:
-            protect_lineages = self.alias_to_lineage(
-                protect_lineages, reverse=False).to_list()
-            self.protect_lineages = protect_lineages
-        else:
-            self.protect_lineages = []
-        self.collapsed_col = collapsed_col
-        self.collapsed = self.data.copy()
-
-    def alias_to_lineage(self, lineage_series, reverse: bool = False) -> pd.Series:
-        """
-        Given pandas series of string objects and dict of sub-strings to replace
-        and replacement sub-strings, returns series where rows where strings
-        starting with the dict key sub-string are replaced by the string starting
-        with the `start_strs_to_replace` dict value.
-
-        Examples
-        --------
-        B.1.1               B.1.1           (B.1 not an alias)
-        AY.4.1      >>      B.1.617.2.4.1   (AY.4 alias of B.1.617.2.4)
-        BA.1                B.1.1.529.1     (BA.1 alias of B.1.1.529.1)
-        """
-        if not type(self).pango_aliases:
-            type(self).pango_aliases = get_pango_aliases()
-
-        lineage_converter = (
-            type(self).pango_aliases
-            if not reverse
-            else reverse_alias_dict(type(self).pango_aliases)
-        )
-
-        replaced_series = unalias_lineage(lineage_converter, lineage_series)
-
-        return replaced_series
-
-    def get_lineage_level(self) -> pd.Series:
-        """
-        Returns series of integers matching depth of lineage name for the
-        collapsed_col if collapsed is True, otherwise for the lineages_col.
-
-        Examples
-        --------
-        B.1                  2
-        B.1.1.7     >>       4
-        AY.1                 2
-        """
-        return get_lineage_level(self.collapsed[self.collapsed_col])
-
-    def __get_lineages_to_collapse(
-            self, level: int, threshold: Union[int, pd.Series]
-    ) -> pd.Series:
-        """
-        Return boolean pandas series to filter data by based on lineage level
-        and a count threshold.
-        """
-        # only collapse lineages with fewer sequences than the threshold
-        # get totals for cols to group
-        below_threshold = threshold > (
-            self.collapsed
-                .groupby(self.cols_to_aggregate + [self.collapsed_col])
-            [self.totals_col]
-                .transform('sum')
-        )
-        logging.debug('below', below_threshold, '\tthr', threshold)
-        # select records with lineage level being collapsed
-        in_level = self.collapsed['level'] == level
-
-        if self.protect_lineages:
-            protected = (
-                self.collapsed[self.collapsed_col].isin(self.protect_lineages)
-            )
-        else:
-            protected = pd.Series(
-                [False] * self.collapsed.shape[0], index=self.collapsed.index
-            )
-        return below_threshold & in_level & ~ protected
-
-    def __remove_highest_lineage_level(self, indices) -> pd.Series:
-        """
-        Get lineage parent for each lineage.
-
-        Examples
-        --------
-        'B.1.1'     >>      'B.1'
-        """
-        return (
-            self.collapsed
-                .loc[indices, self.collapsed_col]
-                .str.rsplit('.', n=1)
-                .str[0]
-        )
-
-    def __collapse_lineages(
-            self, level: int, threshold: Union[int, pd.Series]
-    ) -> pd.DataFrame:
-        to_collapse = self.__get_lineages_to_collapse(
-            level, threshold=threshold
-        )
-        self.collapsed.loc[
-            to_collapse, self.collapsed_col
-        ] = self.__remove_highest_lineage_level(to_collapse)
-        self.collapsed['level'] = self.get_lineage_level()
-        return self.collapsed
-
-    def __convert_back_to_alias_and_drop_level(self, new_col: bool = False) -> pd.DataFrame:
-        # convert back to aliases
-        col_name = (self.collapsed_col
-                    if not new_col
-                    else 'collapsed_alias')
-        self.collapsed[col_name] = self.alias_to_lineage(
-            self.collapsed[self.collapsed_col], reverse=True
-        )
-        # no further need for level column
-        self.collapsed.drop(columns='level', inplace=True)
-        return self.collapsed
-
-    def collapse_based_on_threshold(
-            self, threshold: Union[int, pd.Series], convert_back: bool = True, new_alias_col: bool = False
-    ) -> pd.DataFrame:
-        # process each level starting from highest to avoid collapsing a lower
-        # level lineage that would accumulate enough sequences from higher levels:
-        # e.g.                          should result in         and not
-        # B.1       10                   B.1       10          B.1       11
-        # B.1.1     1           >>       B.1.1     11          B.1.1     10
-        # B.1.1.4   4
-        # B.1.1.5   6                   (threshold of 10)
-        self.collapsed = (
-            self.data.copy()
-                .assign(
-                level=get_lineage_level(self.collapsed[self.collapsed_col]))
-        )
-        for level in range(self.collapsed['level'].max(), self.min_level, -1):
-            self.collapsed = self.__collapse_lineages(level, threshold)
-        if convert_back:
-            self.__convert_back_to_alias_and_drop_level(new_col=new_alias_col)
-        return self.collapsed
-
-    def __get_thresholds_based_on_pct(
-            self, records_pct: Union[int, float]
-    ) -> pd.Series:
-        if self.cols_to_aggregate:
-            thresholds = (
-                self.collapsed
-                    .groupby(self.cols_to_aggregate)
-                [self.totals_col]
-                    .transform('sum')
-                    .mul(records_pct / 100)
-            ).round()
-        else:
-            thresholds = round(
-                self.collapsed[self.totals_col].sum() * (records_pct / 100)
-            )
-        return thresholds
-
-    def collapse_based_on_pct(
-            self, records_pct: Union[int, float], convert_back: bool = True
-    ) -> pd.DataFrame:
-        self.collapsed = (
-            self.data.copy()
-                .assign(
-                level=get_lineage_level(self.collapsed[self.collapsed_col]))
-        )
-        threshold = self.__get_thresholds_based_on_pct(records_pct)
-        logging.debug(
-            'pct', records_pct, 'collapse_based_on_pct thr on pct', threshold
-        )
-        for level in range(self.collapsed['level'].max(), self.min_level, -1):
-            logging.debug('level', level)
-            self.collapsed = self.__collapse_lineages(level, threshold)
-            logging.debug('coll on pct coll\n', self.collapsed)
-        if convert_back:
-            self.__convert_back_to_alias_and_drop_level()
-        logging.debug('334', self.collapsed)
-        return self.collapsed
-
-    def collapse_recursively_to_at_least_n(
-            self, n: int, thresholds: Union[list, tuple, set, pd.Series, None
-            ] = None, percents: bool = True
-    ) -> tuple:
-        if not thresholds:
-            if percents:
-                thresholds = list(range(5, 35, 5))
-            else:
-                thresholds = list(range(1_000, 11_000, 1_000))
-        else:
-            thresholds = sorted(list(thresholds))
-
-        local_collapsed = (
-            self.data.copy()
-                .assign(
-                level=get_lineage_level(self.collapsed[self.collapsed_col]))
-        )
-        used_threshold = 0
-        logging.debug('b4l coll', self.collapsed)
-        logging.debug('b4l loc coll', local_collapsed)
-        for threshold in thresholds:
-            self.collapsed = (
-                self.data.copy()
-                    .assign(
-                    level=get_lineage_level(
-                        self.collapsed[self.collapsed_col])
-                )
-            )
-            logging.debug('\ncollapse_recursively_to_at_least_n: threshold=', threshold)
-            if percents:
-                self.collapse_based_on_pct(threshold, convert_back=False)
-            else:
-                self.collapse_based_on_threshold(threshold, convert_back=False)
-            if self.collapsed[self.collapsed_col].nunique() > n:
-                local_collapsed = self.collapsed.copy()
-                used_threshold = threshold
-            elif self.collapsed[self.collapsed_col].nunique() == n:
-                used_threshold = threshold
-                break
-            else:
-                self.collapsed = local_collapsed
-                logging.debug('collapse n: inst coll=', self.collapsed)
-                logging.debug('collapse n: lc=', local_collapsed)
-                break
-        logging.debug('collapse_recursively_to_at_least_n ut', used_threshold)
-        logging.debug(f'return coll to n b4 tidy\n {self.collapsed}')
-        return used_threshold, self.__convert_back_to_alias_and_drop_level()
-
-
-# %% load and filter most recent df 12 weeks
-
-def return_latest_file(input_path, identifier: str):
+def return_latest_file(input_path, identifier: str) -> str:
     file = sorted(glob.glob(input_path + f"/*{identifier}"))[-1]
+    # todo verify this way of getting the latest works, possibly change to using max(files, key=os.path.getmtime)
     print(f"{datetime.datetime.now()} latest {identifier}: {file}")
     return file
 
 
-def get_start_of_month_date_x_weeks_ago(input_df, int_weeks: int):
+def get_start_of_month_date_x_weeks_ago(input_df, int_weeks: int) -> datetime:
     input_df["collection_date"] = pd.to_datetime(input_df['collection_date'], format='%Y-%m-%d')
     val_today = datetime.datetime.now()
     val_six_months_ago = (val_today - datetime.timedelta(weeks=int_weeks)).replace(day=1)
@@ -524,7 +144,7 @@ def filter_df_only_last_12_weeks(input_df, date_column_name: str, input_date):
     return temp_df
 
 
-def get_date_and_lineage_info_v2(input_path, int_weeks: int, identifier: str):
+def get_date_and_lineage_info_v2(input_path, int_weeks: int, identifier: str) -> pd.DataFrame:
     file = return_latest_file(input_path, identifier)
     df = pd.read_csv(file,
                      usecols=["central_sample_id", "collection_date", "adm1", "usher_lineage", "lineage", "mutations",
@@ -534,13 +154,18 @@ def get_date_and_lineage_info_v2(input_path, int_weeks: int, identifier: str):
     df.loc[df['lineages_version'].str.contains("SCORPIO", na=True), 'lineage'] = "Unassigned"
     df.loc[df['lineages_version'].str.contains("SCORPIO", na=True), 'usher_lineage'] = "Unassigned"
     val_cut_off_date = get_start_of_month_date_x_weeks_ago(df, 53)
+    # todo, check that this is correct. 53 weeks ago is an input
+    #  here but then below the result is the input for 12 weeks prior, the function input of 13 weeks is never used
+    # should the cutoff be hard coded, possibly for config file and passed down.
     df = filter_df_only_last_12_weeks(df, "collection_date", val_cut_off_date)
     df = df[df["adm1"].str.contains("UK", na=False)]
-    # df = df[~df["adm1"].str.contains("New_South_Wales")]
     return df
 
 
-def return_week_begin_column(input_df, date_column_name: str):
+def return_week_begin_column(input_df: pd.DataFrame, date_column_name: str) -> pd.DataFrame:
+    '''
+    This lambda returns the date of the monday for the week input
+    '''
     input_df['week_begin'] = input_df.apply(
         lambda x: x[date_column_name] - pd.Timedelta(days=x[date_column_name].dayofweek)
         if pd.notnull(x[date_column_name]) else np.nan, axis=1)
@@ -548,9 +173,10 @@ def return_week_begin_column(input_df, date_column_name: str):
     return input_df
 
 
-def generate_week_counts(input_df, int_weeks: int, date_column_name: str):
+def generate_week_counts(input_df, int_weeks: int, date_column_name: str) -> [int, int]:
     current_week_begin = datetime.datetime.today().date() - pd.Timedelta(days=datetime.datetime.today().weekday())
     # get the date of the Monday 24 weeks ago (i.e 6 months)
+    # todo check, comment here says 24 weeks, input is 53 weeks. Comment or input need edited
     # convert to pandas datetime so that time is set to 00:00:00 instead of current time of day
     # so it will pick up stuff where the date matches
     time_since = pd.to_datetime(current_week_begin - datetime.timedelta(weeks=int_weeks))
@@ -617,7 +243,10 @@ def generate_display(row):
         return f'{row["collapsed_alias"]} ({row["lineage_clean"].replace("B.1.1.529", "BA")})'
 
 
-def link_climb_ids(df, majora_meta_data_path, identifier: str):
+def link_climb_ids(df, majora_meta_data_path, identifier: str) -> pd.DataFrame:
+    '''
+    merge files on "central_sample_id" and on "anonymous_sample_id"
+    '''
     file = return_latest_file(majora_meta_data_path, identifier)
     df_link = pd.read_csv(file, sep='\t', on_bad_lines='skip', usecols=["central_sample_id", "anonymous_sample_id"])
     dfdf = df.merge(df_link, left_on="central_sample_id", right_on="anonymous_sample_id")
@@ -627,7 +256,7 @@ def link_climb_ids(df, majora_meta_data_path, identifier: str):
 
 
 def generate_counts(results_df, weeks_to_include, prefix, local_directory, mount_point, mount_folder, min_level=2,
-                    threshold=5000):
+                    threshold=5000) -> None:
     # results_df["collection_date"] = results_df["collection_date"].dt.date
     # results_df["week_begin"] = results_df["week_begin"].dt.date
     # group by week/lineage to get counts per week
@@ -646,16 +275,8 @@ def generate_counts(results_df, weeks_to_include, prefix, local_directory, mount
     print(f"{datetime.datetime.now()} lineages to protect: {to_protect}")
     lc = LineageCollapser(week_counts, 'usher_lineage', 'seq_count', min_level=min_level, protect_lineages=to_protect,
                           collapsed_col='lineage_clean')
-    week_counts_collapsed = lc.collapse_based_on_threshold(threshold, convert_back=True, new_alias_col=True)
-    over_threshold = week_counts_collapsed[['collapsed_alias', 'seq_count']].groupby(
-        'collapsed_alias').sum().reset_index().query(f'seq_count >= {threshold}').collapsed_alias.unique().tolist()
 
-    # combine list of lineages to protect from collapse from each of the processes
-    combined_protect = set(to_protect + over_threshold + ['Unassigned'])
-
-    # mask anything that is not in either the to_protect or over_threshold lists as Other
-    week_counts_collapsed_masked = mask_less_prevalent_values(week_counts_collapsed,
-                                                              dict(collapsed_alias=combined_protect))
+    week_counts_collapsed_masked = get_weeks_counts_collapsed_masked(lc, threshold, to_protect)
     # combine the alias and uncollapsed version of the lineage to make the label used in the figure legend
     week_counts_collapsed_masked['display_label'] = week_counts_collapsed_masked.apply(lambda x: generate_display(x),
                                                                                        axis=1)
@@ -668,6 +289,17 @@ def generate_counts(results_df, weeks_to_include, prefix, local_directory, mount
     # add unaliased lineage column to results dataframe before saving
     results_df['unaliased_lineage'] = lc.alias_to_lineage(results_df.usher_lineage)
 
+    results_merged = get_results_merged(results_df, week_counts_collapsed_masked)
+
+    create_output_csvs(combined_counts,
+                       local_directory,
+                       prefix,
+                       results_df,
+                       results_merged,
+                       week_counts_collapsed_masked)
+
+
+def get_results_merged(results_df, week_counts_collapsed_masked) -> pd.DataFrame:
     # modelling data has an older time limit to help predictions so use full results_df
     mutations = generate_table_for_modelling(results_df)
     results_merged = results_df.merge(mutations, on='central_sample_id', how='outer', suffixes=('', '_DROP')).filter(
@@ -676,6 +308,11 @@ def generate_counts(results_df, weeks_to_include, prefix, local_directory, mount
         ['usher_lineage', 'lineage_clean', 'collapsed_alias']].drop_duplicates().rename(
         {'lineage_clean': 'collapsed_lineage_full'})
     results_merged = results_merged.merge(collapsing, on='usher_lineage', how='left')
+    return results_merged
+
+
+def create_output_csvs(combined_counts, local_directory, prefix, results_df, results_merged,
+                       week_counts_collapsed_masked):
     date = datetime.date.today().strftime("%Y%m%d")
     # os.chdir(local_directory)
     results_merged.to_csv(f"{local_directory}/{date}_year_full_lineage_metadata_with_mutations.csv")
@@ -684,13 +321,28 @@ def generate_counts(results_df, weeks_to_include, prefix, local_directory, mount
     combined_counts.to_csv(f"{local_directory}/{date}_{prefix}_year_combined_counts_for_plot.csv")
 
 
-def generate_lineage_prevalence(file_path:str, file_path2:str, save_path=os.getcwd()):
+def get_weeks_counts_collapsed_masked(lc, threshold, to_protect) -> pd.DataFrame:
+    week_counts_collapsed = lc.collapse_based_on_threshold(threshold, convert_back=True, new_alias_col=True)
+    over_threshold = week_counts_collapsed[['collapsed_alias', 'seq_count']].groupby(
+        'collapsed_alias').sum().reset_index().query(f'seq_count >= {threshold}').collapsed_alias.unique().tolist()
+    # combine list of lineages to protect from collapse from each of the processes
+    combined_protect = set(to_protect + over_threshold + ['Unassigned'])
+    # mask anything that is not in either the to_protect or over_threshold lists as Other
+    week_counts_collapsed_masked = mask_less_prevalent_values(week_counts_collapsed,
+                                                              dict(collapsed_alias=combined_protect))
+    return week_counts_collapsed_masked
 
+
+def generate_lineage_prevalence(file_path: str, file_path2: str, save_path=os.getcwd()) -> None:
+    # todo the file names can probably go in the config
     df = get_date_and_lineage_info_v2(file_path, 13, "all_metadata.csv")
     df_results = return_week_begin_column(df, "collection_date")
     df_week_counts, df_results_weeks = generate_week_counts(df_results, 53, "week_begin")
+
+    # todo can the next two lines be removed, they arent used
     df_modelling = generate_table_for_modelling(df_results)
     to_protect = get_lineages_to_protect(df_week_counts)
+
     last_week = (datetime.datetime.now() - datetime.timedelta(days=7))
     if df_results_weeks[-1] >= np.datetime64(last_week) or \
             df_results[(df_results.week_begin == df_results_weeks[-1])].shape[0] < 100:

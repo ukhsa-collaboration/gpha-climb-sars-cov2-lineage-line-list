@@ -79,9 +79,9 @@ def run_commands():
 
 
 def run_scan() -> None:
-    configParser = configparser.RawConfigParser()
-    latest_alignments = configParser.get('file-paths','latest_alignments')
-    latest_general = configParser.get('file-paths','latest_general')
+    config_parser = configparser.RawConfigParser()
+    latest_alignments = config_parser.get('file-paths','latest_alignments')
+    latest_general = config_parser.get('file-paths','latest_general')
     out_dir = make_output_folder()
     run_line_list()
     run_lineage_prevalence(save_loc=out_dir,
