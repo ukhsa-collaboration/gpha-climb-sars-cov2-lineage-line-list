@@ -49,9 +49,9 @@ def get_json() -> Union[str, None]:
 
 
 
-def run_line_list(n_wks=6) -> None:
+def run_line_list(n_wks=6, metadata_path=None) -> None:
     run_start = get_run_start(n_wks)
-    generate_lineage_groups(end=run_start)
+    generate_lineage_groups(end=run_start, metadata_path=metadata_path)
     
     # run with previous json as backround to lower threshold entries
     path_to_latest_json = sorted(glob.glob('lineage_group_lookup*.json'))[-1]
@@ -77,9 +77,17 @@ def run_lineage_prevalence(save_loc:str, path_to_alignment:str, path_to_metadata
 def run_commands():
     pass
 
+CONFIG_PATH = Path(__file__).resolve().parent.parent / "config"
+print(CONFIG_PATH)
+
+def load_config():
+    config_parser = configparser.ConfigParser()
+    config_parser.read(CONFIG_PATH)
+    return config_parser
 
 def run_scan() -> None:
-    config_parser = configparser.RawConfigParser()
+    config_parser = load_config()
+
     latest_alignments = config_parser.get('file-paths','latest_alignments')
     latest_general = config_parser.get('file-paths','latest_general')
     out_dir = make_output_folder()

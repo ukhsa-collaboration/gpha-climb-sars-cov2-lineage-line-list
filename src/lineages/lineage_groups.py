@@ -47,14 +47,12 @@ def compare_lineages(lineageA, lineageB):
     return 0
 
 
-def get_qualifying_lineages(start: None, end: None, threshold: float):
+def get_qualifying_lineages(start: None, end: None, threshold: float, metadata_path=None):
     ## read in latest metadata file
     print(f"{datetime.datetime.now()} Parsing cog_*_all_metadata.csv")
     meta_df = pd.read_csv(
-        glob("/cephfs/covid/bham/results/msa/latest/alignments/cog_*_all_metadata.csv")[
-            0
-        ],
-        usecols=["collection_date", "received_date", "usher_lineage"],
+        metadata_path,
+        usecols=["collection_date", "received_date", "lineage"],
         low_memory=False,
     )
 
@@ -88,7 +86,7 @@ def get_qualifying_lineages(start: None, end: None, threshold: float):
     ## group by year-month
     print(f"{datetime.datetime.now()} Grouping lineages by month")
     group_df = (
-        meta_df.groupby(["usher_lineage", "consensus_date"])
+        meta_df.groupby(["lineage", "consensus_date"])
             .size()
             .reset_index()
             .rename({0: "lineage_count"}, axis=1)
@@ -253,7 +251,7 @@ def get_root_lineages():
     return set(root_lineages)
 
 
-def generate_lineage_groups(start=None, end=None, filename=None, threshold=0.25):
+def generate_lineage_groups(start=None, end=None, filename=None, threshold=0.25, metadata_path=None):
     start_time = datetime.datetime.now()
     group_lineages = set()
     if filename is not None:
@@ -275,7 +273,7 @@ def generate_lineage_groups(start=None, end=None, filename=None, threshold=0.25)
             sys.exit()
 
         ## actual script
-    prevalent_lineages = get_qualifying_lineages(end, start, threshold)  ## generated based on prevalence
+    prevalent_lineages = get_qualifying_lineages(end, start, threshold, metadata_path)  ## generated based on prevalence
     group_lineages.update(prevalent_lineages)
     variant_lineages = (
         get_defined_variant_lineages()

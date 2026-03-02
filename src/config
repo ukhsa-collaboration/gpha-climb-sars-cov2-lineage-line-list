@@ -1,3 +1,4 @@
 [file-paths]
 latest_alignments = "/cephfs/covid/bham/results/msa/latest/alignments/"
 latest_general = "/cephfs/covid/artifacts/elan/latest/"
+no_climb = /home/phe.gov.uk/james.mackle/Downloads/testing.csv

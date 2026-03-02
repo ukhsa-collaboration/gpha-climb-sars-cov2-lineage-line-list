@@ -8,69 +8,6 @@ import json
 class PangoAliasError(Exception):
     pass
 
-def get_pango_aliases(do_filter=True) -> dict:
-    """
-    Return dict of Pango lineage alias: full lineage name from COG-UK website.
-    """
-    try:
-        with requests.get(
-                "https://raw.githubusercontent.com/cov-lineages/pango-designation/master/pango_designation/alias_key.json") as url:
-            data = json.loads(url.text)
-            if do_filter:
-                pango_aliases_filter = dict(
-                    [t for t in data.items() if not t[0].startswith('X') and t[0] not in ['A', 'B']])
-                return pango_aliases_filter
-            else:
-                return data
-    except:
-        raise PangoAliasError('Cannot generate alias dict from json file')
-
-def get_lineage_level(lineage_series: pd.Series) -> pd.Series:
-    """
-    Given pandas series with lineages, returns series of integers matching
-    depth of lineage name.
-
-    Examples
-    --------
-    B.1                  2
-    B.1.1.7     >>       4
-    AY.1                 2
-    """
-    return (
-        lineage_series
-        .str.split('.')
-        .map(lambda x: len(x if isinstance(x, list) else [x]))  # deal w/ NaNs
-    )
-
-
-
-def reverse_alias_dict(alias_dict):
-    """
-    When changing lineages back to alias, dict needs to be sorted by lineage length to cope with nested alias
-    e.g. B.1.1.529.5.2.1.5 == BA.5.2.1.5 == BF.5
-    Therefore need to replace B.1.1.529.5.2.1 in list before replacing B.1.1.529
-    """
-    alias_swap = {v: k for k, v in alias_dict.items()}
-    sorted_swap = dict()
-    for k in sorted(alias_swap, key=len, reverse=True):
-        sorted_swap[k] = alias_swap[k]
-    return sorted_swap
-
-def unalias_lineage(lineage_converter, lineage_series):
-    replaced_series = pd.Series(lineage_series.copy())
-    for to_repl, repl_with in lineage_converter.items():
-        # match lineage exact match and sub-lineages
-        lin_match = (
-                replaced_series.str.startswith(f'{to_repl}.') &
-                (replaced_series != to_repl)
-        )
-        # replace matched sub-string by replacement sub-string (avoiding
-        # slower regex substitution)
-        replaced_series.loc[lin_match] = (
-                repl_with + replaced_series.loc[lin_match].str[len(to_repl):]
-        )
-    return replaced_series
-
 
 class LineageCollapser:
     # this is set to None so that importing the lib is not prevented if there is a problem with generating the alias
@@ -84,6 +21,42 @@ class LineageCollapser:
             protect_lineages: Union[list, tuple, set, pd.Series, None
             ] = None, collapsed_col: str = 'collapsed'
     ) -> None:
+        cols_to_aggregate, protect_lineages = self.validate_inputs(collapsed_col,
+                                                                   cols_to_aggregate,
+                                                                   dataframe,
+                                                                   lineages_col,
+                                                                   min_level,
+                                                                   protect_lineages,
+                                                                   totals_col)
+
+        # create a copy of the dataframe and setup a copy of the column
+        # containing the lineage info. Lineage aliases are replaced with the
+        # corresponding pangolin lineages so collapser works on real levels
+        self.data = dataframe.copy()
+        self.lineage_col = lineages_col
+        self.data[collapsed_col] = self.alias_to_lineage(
+            self.data[self.lineage_col].copy(), reverse=False)
+        self.totals_col = totals_col
+        self.collapsed = self.data.copy()
+
+        self.min_level = min_level
+        if cols_to_aggregate:
+            self.cols_to_aggregate = [
+                col for col in cols_to_aggregate
+                if col not in (lineages_col, collapsed_col)
+            ]
+        else:
+            self.cols_to_aggregate = []
+        if protect_lineages is not None:
+            protect_lineages = self.alias_to_lineage(
+                protect_lineages, reverse=False).to_list()
+            self.protect_lineages = protect_lineages
+        else:
+            self.protect_lineages = []
+        self.collapsed_col = collapsed_col
+
+    def validate_inputs(self, collapsed_col, cols_to_aggregate, dataframe, lineages_col, min_level, protect_lineages,
+                        totals_col):
         assert isinstance(dataframe, pd.DataFrame), (
             'dataframe should be a pandas data frame.')
         assert isinstance(lineages_col, (str, int)), (
@@ -140,31 +113,22 @@ class LineageCollapser:
             f' as it will be created to store the lineage each record will be '
             f'collapsed into.'
         )
+        return cols_to_aggregate, protect_lineages
 
-        # create a copy of the dataframe and setup a copy of the column
-        # containing the lineage info. Lineage aliases are replaced with the
-        # corresponding pangolin lineages so collapser works on real levels
-        self.data = dataframe.copy()
-        self.lineage_col = lineages_col
-        self.data[collapsed_col] = self.alias_to_lineage(
-            self.data[self.lineage_col].copy(), reverse=False)
-        self.totals_col = totals_col
-        self.min_level = min_level
-        if cols_to_aggregate:
-            self.cols_to_aggregate = [
-                col for col in cols_to_aggregate
-                if col not in (lineages_col, collapsed_col)
-            ]
-        else:
-            self.cols_to_aggregate = []
-        if protect_lineages is not None:
-            protect_lineages = self.alias_to_lineage(
-                protect_lineages, reverse=False).to_list()
-            self.protect_lineages = protect_lineages
-        else:
-            self.protect_lineages = []
-        self.collapsed_col = collapsed_col
-        self.collapsed = self.data.copy()
+    def unalias_lineage(self, lineage_converter, lineage_series):
+        replaced_series = pd.Series(lineage_series.copy())
+        for to_repl, repl_with in lineage_converter.items():
+            # match lineage exact match and sub-lineages
+            lin_match = (
+                    replaced_series.str.startswith(f'{to_repl}.') &
+                    (replaced_series != to_repl)
+            )
+            # replace matched sub-string by replacement sub-string (avoiding
+            # slower regex substitution)
+            replaced_series.loc[lin_match] = (
+                    repl_with + replaced_series.loc[lin_match].str[len(to_repl):]
+            )
+        return replaced_series
 
     def alias_to_lineage(self, lineage_series, reverse: bool = False) -> pd.Series:
         """
@@ -180,20 +144,23 @@ class LineageCollapser:
         BA.1                B.1.1.529.1     (BA.1 alias of B.1.1.529.1)
         """
         if not type(self).pango_aliases:
-            type(self).pango_aliases = get_pango_aliases()
+            type(self).pango_aliases = self.get_pango_aliases()
 
         lineage_converter = (
             type(self).pango_aliases
             if not reverse
-            else reverse_alias_dict(type(self).pango_aliases)
+            else self.reverse_alias_dict(type(self).pango_aliases)
         )
 
-        replaced_series = unalias_lineage(lineage_converter, lineage_series)
+        replaced_series = self.unalias_lineage(lineage_converter, lineage_series)
 
         return replaced_series
 
-    def get_lineage_level(self) -> pd.Series:
+    def __get_lineage_level(self) -> pd.Series:
         """
+        # todo in the original code there are two methods with this name. this one is definitely recursive.
+            this one calls the other. I am not sure if there is any recursion here
+
         Returns series of integers matching depth of lineage name for the
         collapsed_col if collapsed is True, otherwise for the lineages_col.
 
@@ -203,7 +170,54 @@ class LineageCollapser:
         B.1.1.7     >>       4
         AY.1                 2
         """
-        return get_lineage_level(self.collapsed[self.collapsed_col])
+        return self.get_lineage_level(self.collapsed[self.collapsed_col])
+
+    def get_pango_aliases(self, do_filter=True) -> dict:
+        """
+        Return dict of Pango lineage alias: full lineage name from COG-UK website.
+        """
+        try:
+            # todo take url to config
+            with requests.get(
+                    "https://raw.githubusercontent.com/cov-lineages/pango-designation/master/pango_designation/alias_key.json") as url:
+                data = json.loads(url.text)
+                if do_filter:
+                    pango_aliases_filter = dict(
+                        [t for t in data.items() if not t[0].startswith('X') and t[0] not in ['A', 'B']])
+                    return pango_aliases_filter
+                else:
+                    return data
+        except:
+            raise PangoAliasError('Cannot generate alias dict from json file')
+
+    def get_lineage_level(self, lineage_series: pd.Series) -> pd.Series:
+        """
+        Given pandas series with lineages, returns series of integers matching
+        depth of lineage name.
+
+        Examples
+        --------
+        B.1                  2
+        B.1.1.7     >>       4
+        AY.1                 2
+        """
+        return (
+            lineage_series
+            .str.split('.')
+            .map(lambda x: len(x if isinstance(x, list) else [x]))  # deal w/ NaNs
+        )
+
+    def reverse_alias_dict(self, alias_dict):
+        """
+        When changing lineages back to alias, dict needs to be sorted by lineage length to cope with nested alias
+        e.g. B.1.1.529.5.2.1.5 == BA.5.2.1.5 == BF.5
+        Therefore need to replace B.1.1.529.5.2.1 in list before replacing B.1.1.529
+        """
+        alias_swap = {v: k for k, v in alias_dict.items()}
+        sorted_swap = dict()
+        for k in sorted(alias_swap, key=len, reverse=True):
+            sorted_swap[k] = alias_swap[k]
+        return sorted_swap
 
     def __get_lineages_to_collapse(
             self, level: int, threshold: Union[int, pd.Series]
@@ -258,7 +272,7 @@ class LineageCollapser:
         self.collapsed.loc[
             to_collapse, self.collapsed_col
         ] = self.__remove_highest_lineage_level(to_collapse)
-        self.collapsed['level'] = self.get_lineage_level()
+        self.collapsed['level'] = self.__get_lineage_level()
         return self.collapsed
 
     def __convert_back_to_alias_and_drop_level(self, new_col: bool = False) -> pd.DataFrame:
@@ -286,7 +300,7 @@ class LineageCollapser:
         self.collapsed = (
             self.data.copy()
             .assign(
-                level=get_lineage_level(self.collapsed[self.collapsed_col]))
+                level=self.get_lineage_level(self.collapsed[self.collapsed_col]))
         )
         for level in range(self.collapsed['level'].max(), self.min_level, -1):
             self.collapsed = self.__collapse_lineages(level, threshold)
@@ -317,7 +331,7 @@ class LineageCollapser:
         self.collapsed = (
             self.data.copy()
             .assign(
-                level=get_lineage_level(self.collapsed[self.collapsed_col]))
+                level=self.get_lineage_level(self.collapsed[self.collapsed_col]))
         )
         threshold = self.__get_thresholds_based_on_pct(records_pct)
         logging.debug(
@@ -336,18 +350,12 @@ class LineageCollapser:
             self, n: int, thresholds: Union[list, tuple, set, pd.Series, None
             ] = None, percents: bool = True
     ) -> tuple:
-        if not thresholds:
-            if percents:
-                thresholds = list(range(5, 35, 5))
-            else:
-                thresholds = list(range(1_000, 11_000, 1_000))
-        else:
-            thresholds = sorted(list(thresholds))
+        thresholds = self.sort_or_set_thresholds(percents, thresholds)
 
         local_collapsed = (
             self.data.copy()
             .assign(
-                level=get_lineage_level(self.collapsed[self.collapsed_col]))
+                level=self.get_lineage_level(self.collapsed[self.collapsed_col]))
         )
         used_threshold = 0
         logging.debug('b4l coll', self.collapsed)
@@ -356,7 +364,7 @@ class LineageCollapser:
             self.collapsed = (
                 self.data.copy()
                 .assign(
-                    level=get_lineage_level(
+                    level=self.get_lineage_level(
                         self.collapsed[self.collapsed_col])
                 )
             )
@@ -380,5 +388,14 @@ class LineageCollapser:
         logging.debug(f'return coll to n b4 tidy\n {self.collapsed}')
         return used_threshold, self.__convert_back_to_alias_and_drop_level()
 
+    def sort_or_set_thresholds(self, percents, thresholds):
+        if not thresholds:
+            if percents:
+                thresholds = list(range(5, 35, 5))
+            else:
+                thresholds = list(range(1_000, 11_000, 1_000))
+        else:
+            thresholds = sorted(list(thresholds))
+        return thresholds
 
 # %% load and filter most recent df 12 weeks
