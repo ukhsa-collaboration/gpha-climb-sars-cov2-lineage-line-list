@@ -55,7 +55,7 @@ def run_line_list(n_wks=6, metadata_path=None) -> None:
     
     # run with previous json as backround to lower threshold entries
     path_to_latest_json = sorted(glob.glob('lineage_group_lookup*.json'))[-1]
-    generate_lineage_groups(start=run_start, threshold=0.05, filename=path_to_latest_json)
+    generate_lineage_groups(start=run_start, threshold=0.05, filename=path_to_latest_json, metadata_path=metadata_path)
     print(f"{datetime.now()} Lineage groups generated")
 
 

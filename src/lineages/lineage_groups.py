@@ -52,7 +52,7 @@ def get_qualifying_lineages(start: None, end: None, threshold: float, metadata_p
     print(f"{datetime.datetime.now()} Parsing cog_*_all_metadata.csv")
     meta_df = pd.read_csv(
         metadata_path,
-        usecols=["collection_date", "received_date", "lineage"],
+        usecols=["collection_date", "lineage"],
         low_memory=False,
     )
 
@@ -60,13 +60,13 @@ def get_qualifying_lineages(start: None, end: None, threshold: float, metadata_p
     ## stage column
     meta_df["consensus_date"] = meta_df["collection_date"]
     ## fill in blanks with received date instead
-    meta_df.loc[meta_df["collection_date"].isna(), "consensus_date"] = meta_df[
-        "received_date"
-    ]
+    # meta_df.loc[meta_df["collection_date"].isna(), "consensus_date"] = meta_df[
+    #     "received_date"
+    # ]
     ## remove any empty dates
     meta_df = meta_df[meta_df["consensus_date"].notna()]
     ## drop unnecessary columns
-    meta_df = meta_df.drop(["collection_date", "received_date"], axis=1)
+    meta_df = meta_df.drop(["collection_date" ], axis=1)
 
     ## do filter if required
     if start is not None:
@@ -113,7 +113,7 @@ def get_qualifying_lineages(start: None, end: None, threshold: float, metadata_p
     print(f"{datetime.datetime.now()} Using a threshold of {threshold_pct}%")
 
     qualifying_lineages = set(
-        merge_df[merge_df["prevalence_pct"] >= threshold_pct]["usher_lineage"]
+        merge_df[merge_df["prevalence_pct"] >= threshold_pct]["lineage"]
     )
 
     ## okay, now get the parent lineage of everything that isn't a qualifying lineage,
@@ -121,18 +121,18 @@ def get_qualifying_lineages(start: None, end: None, threshold: float, metadata_p
     aliasor = Aliasor()
 
     def collapse_dataframe(inputDataframe):
-        inputDataframe["usher_lineage"] = inputDataframe["usher_lineage"].apply(
+        inputDataframe["lineage"] = inputDataframe["lineage"].apply(
             lambda x: aliasor.parent(x) if not x in qualifying_lineages else x
         )
 
         ## remove anything with a null parent
-        inputDataframe = inputDataframe[inputDataframe["usher_lineage"] != ""]
+        inputDataframe = inputDataframe[inputDataframe["lineage"] != ""]
 
         inputDataframe = inputDataframe.drop(
             ["sequence_count", "prevalence_pct"], axis=1
         )
         inputDataframe = (
-            inputDataframe.groupby(["usher_lineage", "consensus_date"])
+            inputDataframe.groupby(["lineage", "consensus_date"])
                 .sum()
                 .reset_index()
                 .rename({0: "lineage_count"}, axis=1)
@@ -146,13 +146,13 @@ def get_qualifying_lineages(start: None, end: None, threshold: float, metadata_p
 
         temp_qualifying_lineages = set(
             inputDataframe[inputDataframe["prevalence_pct"] >= threshold_pct][
-                "usher_lineage"
+                "lineage"
             ]
         )
 
         qualifying_lineages.update(temp_qualifying_lineages)
 
-        if len(set(inputDataframe["usher_lineage"]).difference(qualifying_lineages)):
+        if len(set(inputDataframe["lineage"]).difference(qualifying_lineages)):
             print(f"{datetime.datetime.now()} Recursing...")
             inputDataframe = collapse_dataframe(inputDataframe)
         else:
