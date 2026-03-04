@@ -97,6 +97,8 @@ class LineageCollapser_no_climb:
             )
         if protect_lineages is not None:
             protect_lineages = pd.Series(protect_lineages, dtype='object')
+            if protect_lineages.empty:
+                protect_lineages = None
         assert (
                 protect_lineages is None
                 or (isinstance(protect_lineages, pd.Series)
