@@ -9,7 +9,7 @@ class PangoAliasError(Exception):
     pass
 
 
-class LineageCollapser_no_climb:
+class LineageCollapser:
     # this is set to None so that importing the lib is not prevented if there is a problem with generating the alias
     # dict (e.g. web page availability) and will only produce an error when the dict is actually required
     pango_aliases = None  # alias: lineage
