@@ -19,7 +19,7 @@ class LineageCollapser:
             cols_to_aggregate: Union[str, list, None] = None,
             protect_lineages: Union[list, tuple, set, pd.Series, None
             ] = None,
-            collapsed_col: str = 'collapsed',
+            collapsed_col: str = 'collapsed_alias',
     ) -> None:
         cols_to_aggregate, protect_lineages = self.validate_inputs(collapsed_col,
                                                                    cols_to_aggregate,
