@@ -196,3 +196,37 @@ def get_lineages_to_protect(counts_by_week_df: pd.DataFrame, timeframe_length: i
     logging.info("Identified %d lineages to protect in last %d weeks", len(to_protect_collapsed), timeframe_length)
     return list(to_protect_collapsed)
 
+
+def mask_less_prevalent_values(
+    counts_df: pd.DataFrame, lineages_to_leave_unmasked: dict, mask_value='Other'
+) -> pd.DataFrame:
+    """
+    Given data frame and a dict of column names to top values (or values to not
+    mask in that column) returns a copy of the data frame with non-top values
+    masked with the mask value.
+    Arguments:
+        collapsed_counts_df -- Dataframe of lineages counts per week
+        lineages_to_leave_unmasked -- Dict where key = column name in data, values
+                                      are lineages that shouldn't be masked.
+        mask_value -- Str to replace masked lineage values with
+    Outputs:
+        masked_df -- Dataframe contianing masked lineages
+    """
+    for col in lineages_to_leave_unmasked:
+        if col not in counts_df.columns:
+            logging.error("Column %s to be masked not present in dataframe", col)
+    masked_df = counts_df.copy()
+    for col, lineages_no_mask in lineages_to_leave_unmasked.items():
+        if isinstance(masked_df[col].dtype, pd.CategoricalDtype) and (
+            mask_value not in masked_df[col].cat.categories
+        ):
+            masked_df[col] = masked_df[col].cat.set_categories(
+                lineages_no_mask + [mask_value]
+            )
+        masked_df[col].mask(
+            ~ masked_df[col].isin(lineages_no_mask),
+            'Other',
+            inplace=True
+        )
+
+    return masked_df
