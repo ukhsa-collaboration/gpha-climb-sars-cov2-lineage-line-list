@@ -193,5 +193,6 @@ def get_lineages_to_protect(counts_by_week_df: pd.DataFrame, timeframe_length: i
         to_protect_collapsed += to_protect_week
 
     to_protect_collapsed = set(to_protect_collapsed)
+    logging.info("Identified %d lineages to protect in last %d weeks", len(to_protect_collapsed), timeframe_length)
     return list(to_protect_collapsed)
 
