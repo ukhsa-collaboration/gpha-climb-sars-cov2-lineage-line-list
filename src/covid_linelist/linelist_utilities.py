@@ -9,6 +9,7 @@ import datetime as dt
 import json
 import logging
 import os
+from pathlib import Path
 from typing import List
 
 import numpy as np
@@ -29,9 +30,10 @@ def read_lineage_reports_csv(input_file: os.path) -> pd.DataFrame:
     """
     # Specify columns to keep from input csv
     cols_to_keep = ["sample_id", "lineage", "pangolin_version", "specimen_date"]
-    input_df = pd.read_csv(input_file, 
-                           usecols=lambda x: x in cols_to_keep
-                           )
+    with Path(input_file).open("r") as file:
+        input_df = pd.read_csv(file, 
+                               usecols=lambda x: x in cols_to_keep
+                               )
     return input_df
     
 def check_and_update_specimen_dates(lineage_df: pd.DataFrame, specimen_date: str, fill_blanks: bool) -> pd.DataFrame:
