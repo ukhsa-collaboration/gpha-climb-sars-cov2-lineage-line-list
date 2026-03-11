@@ -168,18 +168,26 @@ def get_pango_aliases(do_filter: bool=True) -> dict:
     except Exception:
         logging.error("Could not generate alias dict from remote json file %s", pango_url)
 
-def get_lineages_to_protect(counts_by_week_df: pd.DataFrame, percent_threshold: int, pango_dict: dict) -> List[str]:
+def get_lineages_to_protect(counts_by_week_df: pd.DataFrame, timeframe_length: int, percent_threshold: int, pango_dict: dict) -> List[str]:
     """Identify lineages to protect from collapsing in dataframe
     Arguments:
         counts_df -- Dataframe containing per week counts of lineages
+        timeframe_length -- Timeframe to protect. Used to determine column name in_last_{x}_weeks
         percent_threshold - % of samples of a given lineage needed to protect a lineage
         pango_dict -- Dict containing pango aliases from COG-UK
     Outputs:
         to_protect_list -- List of lineages that should be protected
     """
     to_protect_collapsed = []
-    for week in pd.to_datetime(counts_by_week_df[(counts_by_week_df.in_last_6_weeks)].week_begin.unique().tolist()):
-        lc_week = LineageCollapser(counts_by_week_df[(counts_by_week_df.week_begin == week)], 'lineage', 'seq_count', min_level = 2)
+    weeks_to_protect = pd.to_datetime(
+        counts_by_week_df[(counts_by_week_df[f"in_last_{timeframe_length}_weeks"])].week_begin.unique().tolist()
+        )
+    for week in weeks_to_protect:
+        lc_week = LineageCollapser(counts_by_week_df[(counts_by_week_df.week_begin == week)],
+                                   lineages_col='lineage',
+                                   totals_col='seq_count',
+                                   min_level = 2,
+                                   pango_aliases=pango_dict)
         over_1pct = lc_week.collapse_based_on_pct(percent_threshold)
         to_protect_week = over_1pct.groupby('collapsed').sum('pct_of_week').reset_index().query('pct_of_week >= 1').collapsed.unique().tolist()
         to_protect_collapsed += to_protect_week
