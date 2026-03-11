@@ -188,12 +188,10 @@ def get_lineages_to_protect(counts_by_week_df: pd.DataFrame, timeframe_length: i
                                    totals_col='seq_count',
                                    min_level = 2,
                                    pango_aliases=pango_dict)
-        over_1pct = lc_week.collapse_based_on_pct(percent_threshold)
-        to_protect_week = over_1pct.groupby('collapsed').sum('pct_of_week').reset_index().query('pct_of_week >= 1').collapsed.unique().tolist()
+        over_threshold = lc_week.collapse_based_on_pct(percent_threshold)
+        to_protect_week = over_threshold.groupby('collapsed').sum('pct_of_week').reset_index().query('pct_of_week >= 1').collapsed.unique().tolist()
         to_protect_collapsed += to_protect_week
 
     to_protect_collapsed = set(to_protect_collapsed)
     return list(to_protect_collapsed)
-
-
 
