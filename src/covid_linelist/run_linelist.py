@@ -102,7 +102,11 @@ def main():
     # Retrieve alias key json from COG-UK website
     pango_aliases_dict = llu.get_pango_aliases(do_filter=True)
     # Identify lineages to protect
-    # lineages_to_protect_list = llu.get_lineages_to_protect(counts_by_week_df=counts_by_week_df, percent_threshold=5)
+    lineages_to_protect_list = llu.get_lineages_to_protect(counts_by_week_df=counts_by_week_df,
+                                                           timeframe_length=6,
+                                                           percent_threshold=5,
+                                                           pango_dict=pango_aliases_dict
+                                                           )
 
     # Write to logs if component finished successfully (or not):
     logging.info("Linelist file successfully generated")
