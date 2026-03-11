@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 import linelist_utilities as llu
+from lineage_collapser import LineageCollapser
 
 
 # Arg parse setup
@@ -107,7 +108,26 @@ def main():
                                                            percent_threshold=5,
                                                            pango_dict=pango_aliases_dict
                                                            )
-
+    # Collapse down lineages not in lineages_to_protect_list
+    lc = LineageCollapser(dataframe=counts_by_week_df,
+                          lineages_col='lineage',
+                          totals_col='seq_count',
+                          min_level=2,
+                          protect_lineages=lineages_to_protect_list,
+                          collapsed_col='unaliased_lineage',
+                          pango_aliases=pango_aliases_dict
+                          )
+    # Combine list of lineages to protect from collapse from each of the processes
+    combined_protect = set(lineages_to_protect_list + ['Unassigned'])
+    # Add collapsed_alias column to df for masking so retain lineage_clean column
+    collapsed_week_counts_df = lc.collapsed
+    collapsed_week_counts_df["collapsed_alias"] = collapsed_week_counts_df["unaliased_lineage"]
+    # Mask anything not in combined_protect list as 'Other'
+    collapsed_masked_week_counts_df = llu.mask_less_prevalent_values(counts_df=collapsed_week_counts_df,
+                                                                     lineages_to_leave_unmasked=dict(
+                                                                        collapsed_alias=combined_protect
+                                                                        )
+                                                                    )
     # Write to logs if component finished successfully (or not):
     logging.info("Linelist file successfully generated")
 
