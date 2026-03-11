@@ -128,11 +128,21 @@ def main():
                                                                         collapsed_alias=combined_protect
                                                                         )
                                                                     )
+    # Add unaliased lineage column to filtered sample dataframe before saving
+    filtered_df['unaliased_lineage'] = lc.alias_to_lineage(filtered_df.lineage)
+    # Write result files to csv
+    # Masked and collapsed lineage week counts
+    llu.write_to_csv(result_df = collapsed_masked_week_counts_df,
+                      outdir=out_dir,
+                      filename=f"{today_date}_year_lineage_masking.csv")
+    # Sample records with unaliased lineage and collapsed alias
+    llu.write_to_csv(result_df = filtered_df,
+                      outdir=out_dir,
+                      filename=f"{today_date}_year_full_lineage_metadata.csv")
     # Write to logs if component finished successfully (or not):
     logging.info("Linelist file successfully generated")
 
     return
-
 
 # Run
 if __name__ == "__main__":
