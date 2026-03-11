@@ -232,3 +232,19 @@ def mask_less_prevalent_values(
         )
 
     return masked_df
+
+def write_to_csv(result_df: pd.DataFrame, outdir: Path, filename: str) -> Path:
+    """
+    Writes a given reuslt dataframe to file
+    Arguments:
+        result_df -- Dataframe to write to file
+        outdir -- Directory to write file to
+        suffix -- Suffix to use in file name
+    Outputs:
+        result_file -- Path to result file
+    """
+    result_file = Path(outdir) / filename
+    with Path(result_file).open("w") as file:
+        result_df.to_csv(file)
+    logging.info("Result dataframe written to file: %s", result_file)
+    return result_file
