@@ -9,16 +9,17 @@ class PangoAliasError(Exception):
 
 
 class LineageCollapser:
-    # this is set to None so that importing the lib is not prevented if there is a problem with generating the alias
-    # dict (e.g. web page availability) and will only produce an error when the dict is actually required
-    pango_aliases = None  # alias: lineage
-
     def __init__(
-            self, dataframe: pd.DataFrame, lineages_col: Union[str, int],
-            totals_col: Union[str, int], min_level: int = 2,
+            self, 
+            dataframe: pd.DataFrame,
+            lineages_col: Union[str, int],
+            totals_col: Union[str, int],
+            pango_aliases: dict,
+            min_level: int = 2,
             cols_to_aggregate: Union[str, list, None] = None,
             protect_lineages: Union[list, tuple, set, pd.Series, None
-            ] = None, collapsed_col: str = 'collapsed'
+            ] = None,
+            collapsed_col: str = 'collapsed',
     ) -> None:
         cols_to_aggregate, protect_lineages = self.validate_inputs(collapsed_col,
                                                                    cols_to_aggregate,
@@ -31,13 +32,13 @@ class LineageCollapser:
         # create a copy of the dataframe and setup a copy of the column
         # containing the lineage info. Lineage aliases are replaced with the
         # corresponding pangolin lineages so collapser works on real levels
+        self.pango_aliases = pango_aliases
         self.data = dataframe.copy()
         self.lineage_col = lineages_col
         self.data[collapsed_col] = self.alias_to_lineage(
             self.data[self.lineage_col].copy(), reverse=False)
         self.totals_col = totals_col
         self.collapsed = self.data.copy()
-
         self.min_level = min_level
         if cols_to_aggregate:
             self.cols_to_aggregate = [
@@ -144,17 +145,12 @@ class LineageCollapser:
         AY.4.1      >>      B.1.617.2.4.1   (AY.4 alias of B.1.617.2.4)
         BA.1                B.1.1.529.1     (BA.1 alias of B.1.1.529.1)
         """
-        if not type(self).pango_aliases:
-            type(self).pango_aliases = self.get_pango_aliases()
-
         lineage_converter = (
-            type(self).pango_aliases
+            self.pango_aliases
             if not reverse
-            else self.reverse_alias_dict(type(self).pango_aliases)
+            else self.reverse_alias_dict(self.pango_aliases)
         )
-
         replaced_series = self.unalias_lineage(lineage_converter, lineage_series)
-
         return replaced_series
 
     def __get_lineage_level(self) -> pd.Series:
