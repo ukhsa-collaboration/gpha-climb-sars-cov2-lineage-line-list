@@ -9,6 +9,7 @@ import datetime as dt
 import json
 import logging
 import os
+import sys
 from pathlib import Path
 from typing import List
 
@@ -248,3 +249,26 @@ def write_to_csv(result_df: pd.DataFrame, outdir: Path, filename: str) -> Path:
         result_df.to_csv(file)
     logging.info("Result dataframe written to file: %s", result_file)
     return result_file
+
+##### Lineage groupings - NOTE: Could split to separate module
+def read_lineage_group_lookup_values_from_json(lineage_group_json: Path) -> set:
+    """
+    Reads in a lineage group json file and extracts lineages groups in a set.
+    Arguments:
+        lineage_group_json -- File path to json containing previously generated lineage groups
+    Outputs:
+        previous_lineage_groups -- Set containing previous lineage groups
+    """
+    try:
+        # Read in json file and keep the values (lineage groups).
+        with Path(lineage_group_json).open("r") as file:
+            previous_lineage_groups = json.loads(Path(file).read_text()).values()
+        # Convert to set containing all previous lineage groups with no repeats
+        previous_lineage_groups = set(previous_lineage_groups)
+        logging.info("Successfully read in previously defined lineages from %s", lineage_group_json)
+
+        return previous_lineage_groups
+
+    except Exception:
+        logging.error("Failed to parse lineages from %s", lineage_group_json)
+        sys.exit(1) #TODO: Decide on error strategy/exit codes
