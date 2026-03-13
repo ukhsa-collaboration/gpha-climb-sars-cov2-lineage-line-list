@@ -131,7 +131,7 @@ def get_lineage_counts_per_week(lineage_df: pd.DataFrame) -> pd.DataFrame:
         ['reporting_period', 'lineage']).size().to_frame('seq_count').reset_index()
     return counts_by_week_df
 
-def add_percentages_column(counts_by_week_df: pd.DataFrame) -> pd.DataFrame:
+def add_percentages_column(counts_by_period_df: pd.DataFrame) -> pd.DataFrame:
     """Add boolean column specifying if week falls in date range specified
     Arguments:
         counts_by_week_df -- Dataframe containing lineage counts per week
@@ -140,9 +140,9 @@ def add_percentages_column(counts_by_week_df: pd.DataFrame) -> pd.DataFrame:
     Outputs:
         counts_by_week_df -- Updated dataframe containing lineage counts per week
     """
-    week_total = counts_by_week_df.groupby('week_begin')["seq_count"].transform('sum')
-    counts_by_week_df["pct_of_week"] = (counts_by_week_df["seq_count"] / week_total).mul(100)
-    return counts_by_week_df
+    period_total = counts_by_period_df.groupby('reporting_period')["seq_count"].transform('sum')
+    counts_by_period_df["pct_of_reporting_period"] = (counts_by_period_df["seq_count"] / period_total).mul(100)
+    return counts_by_period_df
 
 def get_pango_aliases(do_filter: bool=True) -> dict:
     """
