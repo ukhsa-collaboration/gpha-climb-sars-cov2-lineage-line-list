@@ -119,7 +119,7 @@ def add_reporting_period_column(
                                )
     return lineage_df
 
-def get_lineage_counts_per_week(lineage_df: pd.DataFrame) -> pd.DataFrame:
+def get_lineage_counts_per_period(lineage_df: pd.DataFrame) -> pd.DataFrame:
     """Create a grouped dataframe containing counts per lineage per week
     Arguments:
         lineage_df -- Dataframe containing pangolin lineage designations
@@ -127,9 +127,9 @@ def get_lineage_counts_per_week(lineage_df: pd.DataFrame) -> pd.DataFrame:
     Outputs:
         counts_by_week_df -- Dataframe containing lineage counts per week
     """
-    counts_by_week_df = lineage_df.groupby(
+    counts_by_period_df = lineage_df.groupby(
         ['reporting_period', 'lineage']).size().to_frame('seq_count').reset_index()
-    return counts_by_week_df
+    return counts_by_period_df
 
 def add_percentages_column(counts_by_period_df: pd.DataFrame) -> pd.DataFrame:
     """Add boolean column specifying if week falls in date range specified
@@ -149,7 +149,7 @@ def get_pango_aliases(do_filter: bool=True) -> dict:
     Return dict of Pango lineage alias: full lineage name from COG-UK website.
     Arguments:
         do_filter -- Bool of whether to filter alias dict
-    Returns:
+    Outputs:
         pango_aliases_dict -- Dictionary of pango aliases
     """
     # TODO: take url to config?
@@ -165,8 +165,28 @@ def get_pango_aliases(do_filter: bool=True) -> dict:
                 return pango_aliases_dict
     except Exception:
         logging.error("Could not generate alias dict from remote json file %s", pango_url)
+        sys.exit(1)
 
-def get_lineages_to_protect(counts_by_week_df: pd.DataFrame, timeframe_length: int, percent_threshold: int, pango_dict: dict) -> List[str]:
+def get_periods_to_protect(reporting_periods: pd.Series, end_date: dt.date, timeframe_length: int) -> pd.DatetimeIndex:
+    """Identify periods in the dataframe to protect based on timeframe.
+    Arguments:
+        counts_by_week_df -- Dataframe containing lineage counts per week
+        timeframe_end -- Most recent date to include in timeframe
+        timeframe_length -- Number of weeks to include in the timeframe range
+    Outputs:
+        periods_to_protect -- DatetimeIndex containing periods to protect
+    """
+    start_date = end_date - dt.timedelta(weeks=timeframe_length)
+    reporting_periods = pd.to_datetime(
+        reporting_periods[
+            (reporting_periods > pd.to_datetime(start_date)) &
+            (reporting_periods < pd.to_datetime(end_date))
+    ].unique(),
+    format='%Y-%m-%d'
+    )
+    return reporting_periods
+
+def get_lineages_to_protect(counts_by_period_df: pd.DataFrame, periods_to_protect: int, percent_threshold: int, pango_dict: dict) -> List[str]:
     """Identify lineages to protect from collapsing in dataframe
     Arguments:
         counts_df -- Dataframe containing per week counts of lineages
@@ -177,11 +197,9 @@ def get_lineages_to_protect(counts_by_week_df: pd.DataFrame, timeframe_length: i
         to_protect_list -- List of lineages that should be protected
     """
     to_protect_collapsed = []
-    weeks_to_protect = pd.to_datetime(
-        counts_by_week_df[(counts_by_week_df[f"in_last_{timeframe_length}_weeks"])].week_begin.unique().tolist()
-        )
-    for week in weeks_to_protect:
-        lc_week = LineageCollapser(counts_by_week_df[(counts_by_week_df.week_begin == week)],
+
+    for period in periods_to_protect:
+        lc_week = LineageCollapser(counts_by_period_df[(counts_by_period_df.reporting_period == period)],
                                    lineages_col='lineage',
                                    totals_col='seq_count',
                                    min_level = 2,
