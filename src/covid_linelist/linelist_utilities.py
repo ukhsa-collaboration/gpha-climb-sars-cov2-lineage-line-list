@@ -85,7 +85,7 @@ def filter_lineage_df_to_date_cutoff(lineage_df: pd.DataFrame, filter_end_date: 
 
 def add_reporting_period_column(
     lineage_df:pd.DataFrame,
-    start_date: str,
+    end_date: str,
     previous_weeks_to_include: int,
     period_size_in_days: int
     ) -> pd.DataFrame:
@@ -94,7 +94,7 @@ def add_reporting_period_column(
         Arguments:
         lineage_df -- Dataframe containing pangolin lineage designations
                       and sample information.
-        start_date -- Date to calculate cut off range from.
+        end_date -- Date to calculate cut off range from.
         previous_weeks_to_include -- Number of weeks to include in the
                                      date range
         period_size_in_days -- Size of periods to split the date range into
@@ -102,9 +102,9 @@ def add_reporting_period_column(
         filtered_df -- lineage_df with reporting_period column
     """
     # Get reporting periods as a series
-    end_date = start_date - dt.timedelta(weeks=previous_weeks_to_include)
-    date_range = pd.date_range(start=end_date,
-                               end=start_date,
+    start_date = end_date - dt.timedelta(weeks=previous_weeks_to_include)
+    date_range = pd.date_range(start=start_date,
+                               end=end_date,
                                freq=f"{period_size_in_days}D"
                                ).to_series(name="reporting_period")
     # Sort lineage_df so merge_asof works
