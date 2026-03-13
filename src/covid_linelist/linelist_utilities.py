@@ -231,6 +231,7 @@ def mask_less_prevalent_values(
     for col in lineages_to_leave_unmasked:
         if col not in counts_df.columns:
             logging.error("Column %s to be masked not present in dataframe", col)
+            sys.exit(1)
     masked_df = counts_df.copy()
     for col, lineages_no_mask in lineages_to_leave_unmasked.items():
         if isinstance(masked_df[col].dtype, pd.CategoricalDtype) and (
