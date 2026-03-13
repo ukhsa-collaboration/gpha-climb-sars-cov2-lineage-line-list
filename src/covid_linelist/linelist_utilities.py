@@ -199,19 +199,25 @@ def get_lineages_to_protect(counts_by_period_df: pd.DataFrame, periods_to_protec
     to_protect_collapsed = []
 
     for period in periods_to_protect:
-        lc_week = LineageCollapser(counts_by_period_df[(counts_by_period_df.reporting_period == period)],
+        lc_period = LineageCollapser(counts_by_period_df[(counts_by_period_df.reporting_period == period)],
                                    lineages_col='lineage',
                                    totals_col='seq_count',
-                                   min_level = 2,
+                                   min_level = 1,
                                    pango_aliases=pango_dict)
-        over_threshold = lc_week.collapse_based_on_pct(percent_threshold)
-        to_protect_week = over_threshold.groupby('collapsed_alias').sum('pct_of_week').reset_index().query('pct_of_week >= 1').collapsed_alias.unique().tolist()
-        to_protect_collapsed += to_protect_week
-
+        over_threshold = lc_period.collapse_based_on_pct(percent_threshold)
+        to_protect_in_period = (
+            over_threshold
+            .groupby('collapsed_alias')
+            .sum('pct_of_reporting_period')
+            .reset_index()
+            .query(f'pct_of_reporting_period >= {percent_threshold}').collapsed_alias
+            .unique()
+            .tolist()
+            )
+        to_protect_collapsed += to_protect_in_period
     to_protect_collapsed = set(to_protect_collapsed)
-    logging.info("Identified %d lineages to protect in last %d weeks", len(to_protect_collapsed), timeframe_length)
+    logging.info("Identified %d lineages to protect across %d time periods", len(to_protect_collapsed), len(periods_to_protect))
     return list(to_protect_collapsed)
-
 
 def mask_less_prevalent_values(
     counts_df: pd.DataFrame, lineages_to_leave_unmasked: dict, mask_value='Other'
