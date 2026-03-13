@@ -254,6 +254,20 @@ def mask_less_prevalent_values(
 
     return masked_df
 
+def add_lineage_group_to_metadata(lineage_df: pd.DataFrame, counts_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Adds lineage group column to sample metadata.
+    """
+    # Subset required columns
+    counts_df = counts_df[["lineage", "collapsed_alias"]]
+    # Merge dataframes and rename column to lineage group
+    lineage_df = (
+        lineage_df
+        .merge(counts_df, on="lineage")
+        .rename(columns={"collapsed_alias": "linease_group"})
+    )
+    return lineage_df
+
 def write_to_csv(result_df: pd.DataFrame, outdir: Path, filename: str) -> Path:
     """
     Writes a given result dataframe to file
