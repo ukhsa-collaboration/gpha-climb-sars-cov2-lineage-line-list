@@ -13,7 +13,6 @@ import sys
 from pathlib import Path
 from typing import List
 
-import numpy as np
 import pandas as pd
 import requests
 from lineage_collapser import LineageCollapser
@@ -36,7 +35,7 @@ def read_lineage_reports_csv(input_file: os.path) -> pd.DataFrame:
                                usecols=lambda x: x in cols_to_keep
                                )
     return input_df
-    
+
 def check_and_update_specimen_dates(lineage_df: pd.DataFrame, specimen_date: str, fill_blanks: bool) -> pd.DataFrame:
     """Check specimen date column exists in input dataframe. If no date
     column present in the file, uses the date provided to generate the date
@@ -64,7 +63,7 @@ def filter_lineage_df_to_date_cutoff(lineage_df: pd.DataFrame, filter_end_date: 
     Arguments:
         lineage_df -- Dataframe containing pangolin lineage designations
                       and sample information.
-        filter_end_date -- Date to calculate cut off range from. 
+        filter_end_date -- Date to calculate cut off range from.
         previous_weeks_to_include -- Number of weeks to include in the
                                      filtered dataframe. Rows with specimen
                                      dates above this will be filtered out.
@@ -80,9 +79,9 @@ def filter_lineage_df_to_date_cutoff(lineage_df: pd.DataFrame, filter_end_date: 
     removed_rows = (len(lineage_df) - len(filtered_df))
     logging.info("""Dataframe filtered to include samples with specimen date
                  later than %s. %d rows of data removed from the dataframe,
-                 %d remaining. 
+                 %d remaining.
                  """, date_x_weeks_ago, removed_rows, len(filtered_df))
-    return filtered_df   
+    return filtered_df
 
 def add_reporting_period_column(
     lineage_df:pd.DataFrame,
