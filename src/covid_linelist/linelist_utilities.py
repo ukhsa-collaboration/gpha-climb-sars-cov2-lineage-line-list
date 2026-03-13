@@ -125,7 +125,7 @@ def get_lineage_counts_per_period(lineage_df: pd.DataFrame) -> pd.DataFrame:
         lineage_df -- Dataframe containing pangolin lineage designations
                       and sample information.
     Outputs:
-        counts_by_week_df -- Dataframe containing lineage counts per week
+        counts_by_period_df -- Dataframe containing lineage counts per week
     """
     counts_by_period_df = lineage_df.groupby(
         ['reporting_period', 'lineage']).size().to_frame('seq_count').reset_index()
@@ -138,7 +138,7 @@ def add_percentages_column(counts_by_period_df: pd.DataFrame) -> pd.DataFrame:
         timeframe_end -- Most recent date to include in timeframe
         timeframe_length -- Number of weeks to include in the timeframe range
     Outputs:
-        counts_by_week_df -- Updated dataframe containing lineage counts per week
+        counts_by_period_df -- Updated dataframe containing lineage counts per week
     """
     period_total = counts_by_period_df.groupby('reporting_period')["seq_count"].transform('sum')
     counts_by_period_df["pct_of_reporting_period"] = (counts_by_period_df["seq_count"] / period_total).mul(100)
@@ -256,7 +256,7 @@ def mask_less_prevalent_values(
 
 def write_to_csv(result_df: pd.DataFrame, outdir: Path, filename: str) -> Path:
     """
-    Writes a given reuslt dataframe to file
+    Writes a given result dataframe to file
     Arguments:
         result_df -- Dataframe to write to file
         outdir -- Directory to write file to
