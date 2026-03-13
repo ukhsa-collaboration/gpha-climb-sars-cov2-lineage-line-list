@@ -59,6 +59,41 @@ def check_and_update_specimen_dates(lineage_df: pd.DataFrame, specimen_date: str
 
     return lineage_df
     
+def add_reporting_period_column(
+    lineage_df:pd.DataFrame,
+    start_date: str,
+    previous_weeks_to_include: int,
+    period_size_in_days: int
+    ) -> pd.DataFrame:
+    """Add reporting_period column to the lineage dataframe. This replaces the previous
+       week_begin column and makes it generic so period can be of varying lengths as required.
+        Arguments:
+        lineage_df -- Dataframe containing pangolin lineage designations
+                      and sample information.
+        start_date -- Date to calculate cut off range from.
+        previous_weeks_to_include -- Number of weeks to include in the
+                                     date range
+        period_size_in_days -- Size of periods to split the date range into
+    Outputs:
+        filtered_df -- lineage_df with reporting_period column
+    """
+    # Get reporting periods as a series
+    end_date = start_date - dt.timedelta(weeks=previous_weeks_to_include)
+    date_range = pd.date_range(start=end_date,
+                               end=start_date,
+                               freq=f"{period_size_in_days}D"
+                               ).to_series(name="reporting_period")
+    # Sort lineage_df so merge_asof works
+    lineage_df.sort_values(by="specimen_date", inplace=True)
+    # Merge lineage_df with the reporting period series - this allocates a reporting period
+    # by going backwards from the specimen date until a reporting period start date is 
+    # encountered and adds this as a column 'reporting_period'.
+    lineage_df = pd.merge_asof(lineage_df,
+                               date_range,
+                               left_on="specimen_date",
+                               right_on="reporting_period"
+                               )
+    return lineage_df
 
 def add_week_begin_column(lineage_df: pd.DataFrame) -> pd.DataFrame:
     """Add week_begin column to lineage_df. This is required for filtering
