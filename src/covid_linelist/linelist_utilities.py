@@ -58,7 +58,32 @@ def check_and_update_specimen_dates(lineage_df: pd.DataFrame, specimen_date: str
     lineage_df['specimen_date'] = pd.to_datetime(lineage_df['specimen_date'], format='%Y-%m-%d')
 
     return lineage_df
-    
+
+def filter_lineage_df_to_date_cutoff(lineage_df: pd.DataFrame, filter_end_date: str, previous_weeks_to_include: int) -> pd.DataFrame:
+    """Filter the lineage_df to the required date range.
+    Arguments:
+        lineage_df -- Dataframe containing pangolin lineage designations
+                      and sample information.
+        filter_end_date -- Date to calculate cut off range from. 
+        previous_weeks_to_include -- Number of weeks to include in the
+                                     filtered dataframe. Rows with specimen
+                                     dates above this will be filtered out.
+    Outputs:
+        filtered_df -- lineage_df filtered to date cut off specified
+    """
+    date_x_weeks_ago = (
+        filter_end_date - dt.timedelta(
+            days=filter_end_date.weekday(),
+            weeks=previous_weeks_to_include
+            )).strftime("%Y-%m-%d")
+    filtered_df = lineage_df[lineage_df['specimen_date'] >= date_x_weeks_ago]
+    removed_rows = (len(lineage_df) - len(filtered_df))
+    logging.info("""Dataframe filtered to include samples with specimen date
+                 later than %s. %d rows of data removed from the dataframe,
+                 %d remaining. 
+                 """, date_x_weeks_ago, removed_rows, len(filtered_df))
+    return filtered_df   
+
 def add_reporting_period_column(
     lineage_df:pd.DataFrame,
     start_date: str,
@@ -95,49 +120,6 @@ def add_reporting_period_column(
                                )
     return lineage_df
 
-def add_week_begin_column(lineage_df: pd.DataFrame) -> pd.DataFrame:
-    """Add week_begin column to lineage_df. This is required for filtering
-    and grouping of data later on.
-    Arguments:
-        lineage_df -- Dataframe containing pangolin lineage designations
-                      and sample information.
-    Outputs:
-        lineage_df -- Updated lineage df with week_begin column 
-    """
-    lineage_df['week_begin'] = lineage_df.apply(
-        lambda x: x.specimen_date - pd.Timedelta(days=x.specimen_date.dayofweek)
-        if pd.notnull(x.specimen_date) else np.nan, axis=1)
-
-    return lineage_df
-
-def filter_lineage_df_to_date_cutoff(lineage_df: pd.DataFrame, filter_start_date: str, previous_weeks_to_include: int) -> pd.DataFrame:
-    """Filter the lineage_df to the required date range.
-    Arguments:
-        lineage_df -- Dataframe containing pangolin lineage designations
-                      and sample information.
-        filter_start_date -- Date to calculate cut off range from. 
-        previous_weeks_to_include -- Number of weeks to include in the
-                                     filtered dataframe. Rows with specimen
-                                     dates above this will be filtered out.
-    Outputs:
-        filtered_df -- lineage_df filtered to date cut off specified
-    """
-    filter_start_date = dt.datetime.strptime(filter_start_date, '%Y-%m-%d')
-    filter_start_date_monday = filter_start_date - dt.timedelta(days=filter_start_date.weekday())
-
-    date_x_weeks_ago = (
-        filter_start_date_monday - dt.timedelta(
-            days=filter_start_date_monday.weekday(),
-            weeks=previous_weeks_to_include
-            )).strftime("%Y-%m-%d")
-    filtered_df = lineage_df[lineage_df['specimen_date'] >= date_x_weeks_ago]
-    removed_rows = (len(lineage_df) - len(filtered_df))
-    logging.info("""Dataframe filtered to include samples with specimen date
-                 later than %s. %d rows of data removed from the dataframe,
-                 %d remaining. 
-                 """, date_x_weeks_ago, removed_rows, len(filtered_df))
-    return filtered_df    
-
 def get_lineage_counts_per_week(lineage_df: pd.DataFrame) -> pd.DataFrame:
     """Create a grouped dataframe containing counts per lineage per week
     Arguments:
@@ -147,28 +129,7 @@ def get_lineage_counts_per_week(lineage_df: pd.DataFrame) -> pd.DataFrame:
         counts_by_week_df -- Dataframe containing lineage counts per week
     """
     counts_by_week_df = lineage_df.groupby(
-        ['week_begin', 'lineage']).size().to_frame('seq_count').reset_index()
-
-    return counts_by_week_df
-
-def add_timeframe_to_protect_column(counts_by_week_df: pd.DataFrame, timeframe_start: str, timeframe_length: int) -> pd.DataFrame:
-    """Add boolean column specifying if week falls in date range specified
-    Arguments:
-        counts_by_week_df -- Dataframe containing lineage counts per week
-        timeframe_end -- Most recent date to include in timeframe
-        timeframe_length -- Number of weeks to include in the timeframe range
-    Outputs:
-        counts_by_week_df -- Updated dataframe containing lineage counts per week
-    """
-    # Get start and end of timeframes for boolean column
-    timeframe_start = dt.datetime.strptime(timeframe_start, '%Y-%m-%d')
-    timeframe_start_monday = timeframe_start - dt.timedelta(days=timeframe_start.weekday())
-    timeframe_end = timeframe_start_monday - dt.timedelta(weeks=6)
-    # Check if week_begin is within timeframe to protect
-    counts_by_week_df[f"in_last_{timeframe_length}_weeks"] = (
-        (counts_by_week_df["week_begin"] < timeframe_start) &
-        (counts_by_week_df["week_begin"] > timeframe_end)
-    )
+        ['reporting_period', 'lineage']).size().to_frame('seq_count').reset_index()
     return counts_by_week_df
 
 def add_percentages_column(counts_by_week_df: pd.DataFrame) -> pd.DataFrame:
