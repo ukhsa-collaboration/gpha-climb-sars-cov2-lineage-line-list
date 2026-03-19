@@ -10,15 +10,27 @@ import json
 import logging
 import os
 import sys
+import yaml
 from pathlib import Path
 from typing import List
 
 import pandas as pd
 import requests
-from lineage_collapser import LineageCollapser
+from covid_linelist.lineage_collapser import LineageCollapser
 
 
 # Functions
+def read_config_file(config_file: Path) -> dict:
+    """Reads config file containing parameters for linelist code.
+    Arguments:
+        config_file -- yaml file containing parameters
+    Returns:
+        dictionary of linelist parameters
+    """
+    with Path(config_file).open("r") as file:
+        linelist_params = yaml.safe_load(file)
+    return linelist_params
+
 def read_lineage_reports_csv(input_file: os.path) -> pd.DataFrame:
     """Read input covid lineage designation file and return dataframe
     containing only required columns and records.
