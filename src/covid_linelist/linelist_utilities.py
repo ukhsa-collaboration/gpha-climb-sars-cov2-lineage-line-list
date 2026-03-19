@@ -29,15 +29,15 @@ def read_lineage_reports_csv(input_file: os.path) -> pd.DataFrame:
         input_df -- Dataframe containing information required for linelist generation
     """
     # Specify columns to keep from input csv
-    cols_to_keep = ["sample_id", "lineage", "pangolin_version", "specimen_date"]
+    cols_to_keep = ["sample_id", "lineage", "pangolin_version", "collection_date"]
     with Path(input_file).open("r") as file:
         input_df = pd.read_csv(file, 
                                usecols=lambda x: x in cols_to_keep
                                )
     return input_df
 
-def check_and_update_specimen_dates(lineage_df: pd.DataFrame, specimen_date: str, fill_blanks: bool) -> pd.DataFrame:
-    """Check specimen date column exists in input dataframe. If no date
+def check_and_update_collection_dates(lineage_df: pd.DataFrame, collection_date: str, fill_blanks: bool) -> pd.DataFrame:
+    """Check collection date column exists in input dataframe. If no date
     column present in the file, uses the date provided to generate the date
     column. Also optionally fills in any blank dates with today's date.
     Arguments:
@@ -46,15 +46,15 @@ def check_and_update_specimen_dates(lineage_df: pd.DataFrame, specimen_date: str
     Outputs:
         lineage_df -- Updated dataframe with checked and filled specimen date column
     """
-    if 'specimen_date' not in lineage_df.columns:
-        lineage_df['specimen_date'] = specimen_date
+    if 'collection_date' not in lineage_df.columns:
+        lineage_df['collection_date'] = collection_date
         logging.info("""No specimen date column in input dataframe. Adding
-                     specimen date of %s""", specimen_date)
+                     collection date of %s""", collection_date)
     elif fill_blanks:
-        lineage_df['specimen_date'].fillna(specimen_date)
-        logging.info("Filling in blank values in specimen date column with %s", specimen_date)
+        lineage_df['collection_date'].fillna(collection_date)
+        logging.info("Filling in blank values in specimen date column with %s", collection_date)
 
-    lineage_df['specimen_date'] = pd.to_datetime(lineage_df['specimen_date'], format='%Y-%m-%d')
+    lineage_df['collection_date'] = pd.to_datetime(lineage_df['collection_date'], format='%Y-%m-%d')
 
     return lineage_df
 
@@ -75,9 +75,9 @@ def filter_lineage_df_to_date_cutoff(lineage_df: pd.DataFrame, filter_end_date: 
             days=filter_end_date.weekday(),
             weeks=previous_weeks_to_include
             )).strftime("%Y-%m-%d")
-    filtered_df = lineage_df[lineage_df['specimen_date'] >= date_x_weeks_ago]
+    filtered_df = lineage_df[lineage_df['collection_date'] >= date_x_weeks_ago]
     removed_rows = (len(lineage_df) - len(filtered_df))
-    logging.info("""Dataframe filtered to include samples with specimen date
+    logging.info("""Dataframe filtered to include samples with collection date
                  later than %s. %d rows of data removed from the dataframe,
                  %d remaining.
                  """, date_x_weeks_ago, removed_rows, len(filtered_df))
@@ -109,13 +109,13 @@ def add_reporting_period_column(
                                ).to_series(name="reporting_period")
     date_range = date_range.astype('datetime64[us]')
     # Sort lineage_df so merge_asof works
-    lineage_df.sort_values(by="specimen_date", inplace=True)
+    lineage_df.sort_values(by="collection_date", inplace=True)
     # Merge lineage_df with the reporting period series - this allocates a reporting period
-    # by going backwards from the specimen date until a reporting period start date is 
+    # by going backwards from the collection date until a reporting period start date is
     # encountered and adds this as a column 'reporting_period'.
     lineage_df = pd.merge_asof(lineage_df,
                                date_range,
-                               left_on="specimen_date",
+                               left_on="collection_date",
                                right_on="reporting_period"
                                )
     return lineage_df
