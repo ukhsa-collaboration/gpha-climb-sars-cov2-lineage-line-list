@@ -11,9 +11,10 @@ import datetime as dt
 import logging
 import sys
 from pathlib import Path
+from importlib import resources
 
-import linelist_utilities as llu
-from lineage_collapser import LineageCollapser
+import covid_linelist.linelist_utilities as llu
+from covid_linelist.lineage_collapser import LineageCollapser
 
 
 # Arg parse setup
@@ -97,18 +98,18 @@ def main():
         return exitcode
     # Get Monday of current week as end of range for any time periods calculated.
     range_end = today_date - dt.timedelta(days=today_date.weekday())
-    # Check and fill specimen date column.
+    # Check and fill collection date column.
     # NOTE: - fills empty dates with Monday of current week - decide if correct behaviour
-    lineage_df = llu.check_and_update_specimen_dates(
+    lineage_df = llu.check_and_update_collection_dates(
         lineage_df=lineage_df,
-        specimen_date=range_end,
+        collection_date=range_end,
         fill_blanks=True
     )
     #  Filter rows to required timeframe.
     lineage_df = llu.filter_lineage_df_to_date_cutoff(
         lineage_df=lineage_df,
         filter_end_date=range_end,
-        previous_weeks_to_include=52 # TODO - add weeks to include to config if reimplement?
+        previous_weeks_to_include=timeframe_full
     )
     # Add column to df with reporting periods 
     lineage_df = llu.add_reporting_period_column(
