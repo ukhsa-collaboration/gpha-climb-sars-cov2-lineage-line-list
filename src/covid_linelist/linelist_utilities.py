@@ -99,7 +99,7 @@ def add_reporting_period_column(
     lineage_df:pd.DataFrame,
     end_date: str,
     previous_weeks_to_include: int,
-    period_size_in_days: int
+    period_size: int
     ) -> pd.DataFrame:
     """Add reporting_period column to the lineage dataframe. This replaces the previous
        week_begin column and makes it generic so period can be of varying lengths as required.
@@ -109,7 +109,7 @@ def add_reporting_period_column(
         end_date -- Date to calculate cut off range from.
         previous_weeks_to_include -- Number of weeks to include in the
                                      date range
-        period_size_in_days -- Size of periods to split the date range into
+        period_size -- Size of periods in weeks to split the date range into
     Outputs:
         filtered_df -- lineage_df with reporting_period column
     """
@@ -117,7 +117,7 @@ def add_reporting_period_column(
     start_date = end_date - dt.timedelta(weeks=previous_weeks_to_include)
     date_range = pd.date_range(start=start_date,
                                end=end_date,
-                               freq=f"{period_size_in_days}D"
+                               freq=f"{period_size}W"
                                ).to_series(name="reporting_period")
     date_range = date_range.astype('datetime64[us]')
     # Sort lineage_df so merge_asof works
