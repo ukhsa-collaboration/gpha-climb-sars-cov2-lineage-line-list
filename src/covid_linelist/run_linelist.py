@@ -115,8 +115,8 @@ def main():
     lineage_df = llu.add_reporting_period_column(
         lineage_df=lineage_df,
         end_date=range_end,
-        previous_weeks_to_include=52,
-        period_size_in_days=14
+        previous_weeks_to_include=timeframe_full,
+        period_size=period_size
     )
     ## Calculate lineage counts and percentages for each reporting period
     # Group data to get lineage counts per week
@@ -130,13 +130,13 @@ def main():
     reporting_periods = llu.get_periods_to_protect(
         reporting_periods=counts_by_reporting_period_df['reporting_period'],
         end_date=range_end,
-        timeframe_length=6
+        timeframe_length=timeframe_recent
     )
     # Identify lineages to protect in last x weeks
     lineages_to_protect_list = llu.get_lineages_to_protect(
         counts_by_period_df=counts_by_reporting_period_df,
         periods_to_protect=reporting_periods,
-        percent_threshold=5,
+        percent_threshold=percent_prevalence,
         pango_dict=pango_aliases_dict
     )
     # Combine list of lineages to protect from collapse from each of the processes
