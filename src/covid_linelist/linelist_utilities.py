@@ -295,7 +295,7 @@ def mask_less_prevalent_values(
                                       are lineages that shouldn't be masked.
         mask_value -- Str to replace masked lineage values with
     Outputs:
-        masked_df -- Dataframe contianing masked lineages
+        masked_df -- Dataframe containing masked lineages
     """
     for col in lineages_to_leave_unmasked:
         if col not in counts_df.columns:
