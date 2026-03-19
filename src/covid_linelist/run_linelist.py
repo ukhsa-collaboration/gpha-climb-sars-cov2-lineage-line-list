@@ -158,8 +158,9 @@ def main():
                           pango_aliases=pango_aliases_dict
                           )
     # Get collapsed alias at correct levels for assigning groups
-    lc.collapse_recursively_to_at_least_n(n=10)
+    lc.collapse_recursively_to_at_least_n(n=12)
     # Mask anything not in combined_protect list as 'Other'
+    combined_protect = set(lineages_to_protect_list + ['Unassigned'])
     collapsed_masked_counts_df = llu.mask_less_prevalent_values(counts_df=lc.collapsed,
                                                                      lineages_to_leave_unmasked={
                                                                         "collapsed_alias" : combined_protect
