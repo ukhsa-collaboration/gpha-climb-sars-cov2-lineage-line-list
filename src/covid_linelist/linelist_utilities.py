@@ -107,6 +107,7 @@ def add_reporting_period_column(
                                end=end_date,
                                freq=f"{period_size_in_days}D"
                                ).to_series(name="reporting_period")
+    date_range = date_range.astype('datetime64[us]')
     # Sort lineage_df so merge_asof works
     lineage_df.sort_values(by="specimen_date", inplace=True)
     # Merge lineage_df with the reporting period series - this allocates a reporting period
