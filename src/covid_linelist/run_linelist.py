@@ -139,11 +139,15 @@ def main():
         percent_threshold=percent_prevalence,
         pango_dict=pango_aliases_dict
     )
-    # Combine list of lineages to protect from collapse from each of the processes
-    combined_protect = set(lineages_to_protect_list + ['Unassigned'])
     # # Identify lineages to protect in last 52 weeks up until 6 weeks ago
-    # Based on overall prevalence in this period to get number of lineages to protect
-    # up to x value
+    num_additional_lineages = max_lineages_full - len(lineages_to_protect_list)
+    # Get lineages to protect for full reporting period, excluding recent reporting period
+    lineages_to_protect_list += llu.get_top_lineages_in_full_window(
+        counts_by_period_df=counts_by_reporting_period_df,
+        end_date=range_end,
+        weeks_to_exclude=timeframe_recent,
+        additional_lineages=num_additional_lineages)
+    ## Lineage collapsing after identifying lineages to protect
     # Collapse down lineages not in lineages_to_protect_list
     lc = LineageCollapser(dataframe=counts_by_reporting_period_df,
                           lineages_col='lineage',
