@@ -229,8 +229,58 @@ def get_lineages_to_protect(counts_by_period_df: pd.DataFrame, periods_to_protec
             )
         to_protect_collapsed += to_protect_in_period
     to_protect_collapsed = set(to_protect_collapsed)
-    logging.info("Identified %d lineages to protect across %d time periods", len(to_protect_collapsed), len(periods_to_protect))
+    logging.info("Identified %d lineages to protect across %d time periods",
+                 len(to_protect_collapsed),
+                 len(periods_to_protect))
     return list(to_protect_collapsed)
+
+def get_top_lineages_in_full_window(
+    counts_by_period_df: pd.DataFrame,
+    end_date:str,
+    weeks_to_exclude: int,
+    additional_lineages: int
+    ) -> list[str]:
+    """Takes counts for reporting periods over the last year and aggregates
+    them to return the top lineages by prevalence in the full reporting window,
+    excluding the most recent x weeks.
+    Arguments:
+        counts_by_period_df -- Dataframe of per reporting period counts of lineages
+        end_date -- End of the full reporting period
+        weeks_to_exclude -- Number of weeks to exclude from calculations.
+                            Calculated as end_date - weeks_to_exclude
+        additional_lineages -- Number of additional lineages to return,
+                               equivalent to top x lineages by prevalence.
+    Returns:
+        to_protect_list -- List of lineages to protect based on prevalence
+                           across full reporting period.
+    """
+    # Filter out last x weeks
+    date_x_weeks_ago = (end_date - dt.timedelta(weeks=weeks_to_exclude)).strftime("%Y-%m-%d")
+    counts_by_period_df = counts_by_period_df[counts_by_period_df['reporting_period'] <= date_x_weeks_ago]
+    logging.info(
+        """Dataframe filtered to remove most recent %s weeks of data. Identifying
+           the %s most prevalent lineages in this period to retain""",
+        weeks_to_exclude,
+        additional_lineages,
+        )
+    # Drop the percentage prevalence column
+    counts_by_period_df = counts_by_period_df[['lineage', 'seq_count']]
+    # Calculate lineage totals for full period
+    totals_df = counts_by_period_df.groupby('lineage').sum(numeric_only=True).reset_index()
+    period_total = totals_df["seq_count"].sum()
+    # Add percentages column
+    totals_df["pct_of_reporting_period"] = (totals_df["seq_count"] / period_total).mul(100)
+    # Return additional lineages to protect by selecting top x in df
+    to_protect_list = (totals_df
+                       .nlargest(additional_lineages,
+                                 columns="pct_of_reporting_period")
+                       ['lineage']
+                       .to_list()
+    )
+    logging.info("Identifed %s additional lineages to protect: %s",
+                 len(to_protect_list),
+                 to_protect_list)
+    return to_protect_list
 
 def mask_less_prevalent_values(
     counts_df: pd.DataFrame, lineages_to_leave_unmasked: dict, mask_value='Other'
