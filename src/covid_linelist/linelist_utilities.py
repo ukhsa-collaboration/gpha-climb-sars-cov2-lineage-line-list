@@ -221,7 +221,7 @@ def get_lineages_to_protect(counts_by_period_df: pd.DataFrame, periods_to_protec
         to_protect_in_period = (
             over_threshold
             .groupby('collapsed_alias')
-            .sum('pct_of_reporting_period')
+            .sum(numeric_only=True)
             .reset_index()
             .query(f'pct_of_reporting_period >= {percent_threshold}').collapsed_alias
             .unique()
