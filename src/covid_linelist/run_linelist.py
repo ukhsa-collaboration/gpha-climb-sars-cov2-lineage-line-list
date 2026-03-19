@@ -69,6 +69,23 @@ def main():
     log_file = Path(out_dir) / f"{today_date}_covid_linelist_logfile.txt"
     set_up_logger(log_file)
 
+    # Read in params from config file
+    config_file = resources.files("covid_linelist.lib").joinpath("linelist_parameters.yaml")
+    config_dict = llu.read_config_file(config_file)
+    ## Set variable names from config
+    # Size of period to split data into
+    period_size = config_dict["global_params"]["period_size"]
+    # Params for % prevalence in recent timeframe
+    timeframe_recent =  config_dict["recent_reporting_window"]["weeks_to_include"]
+    max_lineages_recent = config_dict["recent_reporting_window"]["max_lineages"]
+    min_lineages_recent = config_dict["recent_reporting_window"]["min_lineages"]
+    percent_prevalence = config_dict["recent_reporting_window"]["percent_prevalence"]
+    # Params for full timeframe
+    timeframe_full = config_dict["full_reporting_window"]["weeks_to_include"]
+    max_lineages_full = config_dict["full_reporting_window"]["max_lineages"]
+    min_lineage_full = config_dict["full_reporting_window"]["min_lineages"]
+    # Other variants to group as lineages of interest e.g. previously defined variants
+    defined_variants = config_dict["global_params"]["defined_variants"]
     ## Prepare sample data for prevalence calculations
     # Read in required columns from input csv with lineage designations
     try:
