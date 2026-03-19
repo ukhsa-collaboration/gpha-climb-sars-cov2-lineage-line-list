@@ -259,12 +259,10 @@ def mask_less_prevalent_values(
             masked_df[col] = masked_df[col].cat.set_categories(
                 lineages_no_mask + [mask_value]
             )
-        masked_df[col].mask(
+        masked_df[col] = masked_df[col].mask(
             ~ masked_df[col].isin(lineages_no_mask),
-            'Other',
-            inplace=True
+            'Other'
         )
-
     return masked_df
 
 def add_lineage_group_to_metadata(lineage_df: pd.DataFrame, counts_df: pd.DataFrame) -> pd.DataFrame:
