@@ -154,6 +154,8 @@ def main():
         already_protected=lineages_to_protect_list
         )
     ## Lineage collapsing after identifying lineages to protect
+    # TODO: Add to own function and set threshold to n+1 number rows in df/
+    # change which df use for the collapsing bit.
     # Collapse down lineages not in lineages_to_protect_list
     lc = LineageCollapser(dataframe=counts_by_reporting_period_df,
                           lineages_col='lineage',
@@ -164,15 +166,16 @@ def main():
                           pango_aliases=pango_aliases_dict
                           )
     # Get collapsed alias at correct levels for assigning groups
-    lc.collapse_recursively_to_at_least_n(n=12)
+    lc.collapse_based_on_threshold(threshold=10000) # TODO: Update threshold
+
     # Mask anything not in combined_protect list as 'Other'
-    combined_protect = set(lineages_to_protect_list + ['Unassigned'])
     collapsed_masked_counts_df = llu.mask_less_prevalent_values(counts_df=lc.collapsed,
                                                                      lineages_to_leave_unmasked={
-                                                                        "collapsed_alias" : combined_protect
+                                                                        "collapsed_alias" : lineages_to_protect_list
                                                                         }
                                                                     )
-    ## Add additional lineage columns to sample info df   
+    ## Add additional lineage columns to sample info df
+    # TODO: Add column with variant groups/non-prevalence based protection
     # Add unaliased lineage column
     lineage_df['unaliased_lineage'] = lc.alias_to_lineage(lineage_df.lineage)
     # Add lineage groups
