@@ -10,12 +10,12 @@ import json
 import logging
 import os
 import sys
-import yaml
 from pathlib import Path
 from typing import List
 
 import pandas as pd
 import requests
+import yaml
 from covid_linelist.lineage_collapser import LineageCollapser
 
 
