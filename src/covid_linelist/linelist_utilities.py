@@ -41,7 +41,11 @@ def read_lineage_reports_csv(input_file: os.path) -> pd.DataFrame:
         input_df -- Dataframe containing information required for linelist generation
     """
     # Specify columns to keep from input csv
-    cols_to_keep = ["sample_id", "lineage", "pangolin_version", "collection_date"]
+    cols_to_keep = [
+        "taxon", "sample_id", "central_sample_id", "molis_id", "collection_date",
+        "lineage", "scorpio_call", "version", "pangolin_version", "scorpio_version",
+        "qc_status"
+        ]
     with Path(input_file).open("r") as file:
         input_df = pd.read_csv(file, 
                                usecols=lambda x: x in cols_to_keep
