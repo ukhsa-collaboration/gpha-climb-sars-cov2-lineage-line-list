@@ -402,12 +402,12 @@ def add_lineage_group_to_metadata(lineage_df: pd.DataFrame, counts_df: pd.DataFr
     Adds lineage group column to sample metadata.
     """
     # Subset required columns
-    counts_df = counts_df[["lineage", "collapsed_alias"]]
+    counts_df = counts_df[["lineage", "collapsed_alias"]].drop_duplicates()
     # Merge dataframes and rename column to lineage group
     lineage_df = (
         lineage_df
         .merge(counts_df, on="lineage")
-        .rename(columns={"collapsed_alias": "linease_group"})
+        .rename(columns={"collapsed_alias": "lineage_group"})
     )
     return lineage_df
 
