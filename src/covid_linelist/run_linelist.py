@@ -140,14 +140,19 @@ def main():
         min_lineages=min_lineages_recent,
         pango_dict=pango_aliases_dict
     )
-    # # Identify lineages to protect in last 52 weeks up until 6 weeks ago
-    num_additional_lineages = max_lineages_full - len(lineages_to_protect_list)
+    # Add Unassigned to list as don't want to include in lineage to protect total here
+    lineages_to_protect_list = list(set(lineages_to_protect_list + ["Unassigned"]))
+    # Identify lineages to protect in last 52 weeks up until 6 weeks ago
+    # +1 to account for Unassigned as don't want this including in the additional lineages here
+    num_additional_lineages = max_lineages_full - len(lineages_to_protect_list) + 1
     # Get lineages to protect for full reporting period, excluding recent reporting period
     lineages_to_protect_list += llu.get_top_lineages_in_full_window(
         counts_by_period_df=counts_by_reporting_period_df,
         end_date=range_end,
         weeks_to_exclude=timeframe_recent,
-        additional_lineages=num_additional_lineages)
+        additional_lineages=num_additional_lineages,
+        already_protected=lineages_to_protect_list
+        )
     ## Lineage collapsing after identifying lineages to protect
     # Collapse down lineages not in lineages_to_protect_list
     lc = LineageCollapser(dataframe=counts_by_reporting_period_df,
