@@ -10,8 +10,8 @@ import argparse
 import datetime as dt
 import logging
 import sys
-from pathlib import Path
 from importlib import resources
+from pathlib import Path
 
 import covid_linelist.linelist_utilities as llu
 from covid_linelist.lineage_collapser import LineageCollapser
