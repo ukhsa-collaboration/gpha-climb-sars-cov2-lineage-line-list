@@ -315,7 +315,8 @@ def get_top_lineages_in_full_window(
     counts_by_period_df: pd.DataFrame,
     end_date:str,
     weeks_to_exclude: int,
-    additional_lineages: int
+    additional_lineages: int,
+    already_protected: list
     ) -> list[str]:
     """Takes counts for reporting periods over the last year and aggregates
     them to return the top lineages by prevalence in the full reporting window,
@@ -327,6 +328,8 @@ def get_top_lineages_in_full_window(
                             Calculated as end_date - weeks_to_exclude
         additional_lineages -- Number of additional lineages to return,
                                equivalent to top x lineages by prevalence.
+        already_protected -- List of lineages already protected due to prevalence
+                             in recent reporting window
     Returns:
         to_protect_list -- List of lineages to protect based on prevalence
                            across full reporting period.
@@ -347,6 +350,8 @@ def get_top_lineages_in_full_window(
     period_total = totals_df["seq_count"].sum()
     # Add percentages column
     totals_df["pct_of_reporting_period"] = (totals_df["seq_count"] / period_total).mul(100)
+    # Filter out lineages already protected
+    totals_df = totals_df[~ totals_df['lineage'].isin(already_protected)]
     # Return additional lineages to protect by selecting top x in df
     to_protect_list = (totals_df
                        .nlargest(additional_lineages,
