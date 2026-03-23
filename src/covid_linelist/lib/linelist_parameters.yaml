@@ -1,0 +1,11 @@
+global_params:
+  period_size: 2
+  defined_variants: {}
+recent_reporting_window:
+  max_lineages: 10
+  min_lineages: 1
+  weeks_to_include: 6
+  percent_prevalence: 5
+full_reporting_window:
+  max_lineages: 12
+  weeks_to_include: 52
