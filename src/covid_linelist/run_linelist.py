@@ -136,6 +136,8 @@ def main():
         counts_by_period_df=counts_by_reporting_period_df,
         periods_to_protect=reporting_periods,
         percent_threshold=percent_prevalence,
+        max_lineages=max_lineages_recent,
+        min_lineages=min_lineages_recent,
         pango_dict=pango_aliases_dict
     )
     # # Identify lineages to protect in last 52 weeks up until 6 weeks ago
