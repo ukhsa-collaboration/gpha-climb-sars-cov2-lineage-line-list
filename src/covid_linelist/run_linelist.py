@@ -84,7 +84,6 @@ def main():
     # Params for full timeframe
     timeframe_full = config_dict["full_reporting_window"]["weeks_to_include"]
     max_lineages_full = config_dict["full_reporting_window"]["max_lineages"]
-    min_lineage_full = config_dict["full_reporting_window"]["min_lineages"]
     # Other variants to group as lineages of interest e.g. previously defined variants
     defined_variants = config_dict["global_params"]["defined_variants"]
     ## Prepare sample data for prevalence calculations
