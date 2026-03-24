@@ -70,7 +70,7 @@ def check_and_update_collection_dates(lineage_df: pd.DataFrame, collection_date:
         lineage_df['collection_date'].fillna(collection_date)
         logging.info("Filling in blank values in specimen date column with %s", collection_date)
 
-    lineage_df['collection_date'] = pd.to_datetime(lineage_df['collection_date'], format='%Y-%m-%d')
+    lineage_df['collection_date'] = pd.to_datetime(lineage_df['collection_date'], format='%Y%m%d')
 
     return lineage_df
 
