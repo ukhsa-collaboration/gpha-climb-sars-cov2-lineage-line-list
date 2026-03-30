@@ -11,11 +11,11 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import List
 
 import pandas as pd
 import requests
 import yaml
+
 from covid_linelist.lineage_collapser import LineageCollapser
 
 
@@ -403,6 +403,15 @@ def mask_less_prevalent_values(
             'Other'
         )
     return masked_df
+
+def collapse_lineages_to_protected_levels(
+    counts_df: pd.DataFrame,
+    lineage_to_protect: list,
+    pango_dict: dict
+    ) -> pd.DataFrame:
+    """
+    """
+
 
 def add_lineage_group_to_metadata(lineage_df: pd.DataFrame, counts_df: pd.DataFrame) -> pd.DataFrame:
     """
