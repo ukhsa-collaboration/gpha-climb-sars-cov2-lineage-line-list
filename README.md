@@ -3,143 +3,89 @@
 ---
 
 ## Table of Contents
-
-- [Info](#info)
-- [Features](#features)
+- [Overview](#overview)
 - [Requirements](#requirements)
-- [Install](#install)
+- [Installation](#install)
 - [Usage](#usage)
-- [Commands](#commands)
+- [Config settings](<#config settings>)
 - [Troubleshooting](#troubleshooting)
-- [Change-log](#change-log)
-- [To-do](#to-do)
----
-
-## Info
-
-| Name         | GPHA CLIMB SARs-CoV-2 Lineage Line List                                             |
-|--------------|-------------------------------------------------------------------------------------|
-| Version      | 3.1                                                                                 |
-| Last Updated | 04.11.2025                                                                          |
-| Author(s)    | Mike Brown, Kate Howell, Ashley Shalloe                                             |
-| Contact      | michael.d.brown@ukhsa.gov.uk, kate.howell@ukhsa.gov.uk, ashley.shalloe@ukhsa.gov.uk |
-| Summary      | Data pipleine that produces epi-lineage linelist for COVE to produce epi-curve info for presentation at HS (to be part run on CLIMB) |
 
 ---
 
-## Features
+## Overview
 
-```mermaid
-graph LR
-A((CLIMB COVID)) -- get data --> B[all_metadata.csv]
-B -- pull columns --> C[central_sample_id,
-collection_date,
-adm1,
-usher_lineage,
-lineage,
-mutations]
-G((Sharedrive)) -- get data --> H[genomics_cell_merged]
-
-C --> D[collection_date]
-C --> E[mutations]
-C --> F[usher_lineage]
-
-D -- crop data --> Z[lineage_metadata]
-E -- mutations of interest --> Z[lineage_metadata]
-F -- lineage collapser --> Z[lineage_metadata]
-
-Z[lineage_metadata] --> i{merge}
-H[genomics_cell_merged] --> i{merge}
-
-i --> j(line_epi_line_list.csv)
-
-```
-
----
+This repo contains code to generate the covid linelist and lineage
+groupings.
 
 ## Requirements
-> [!Warning]
-> To run it is neccessary to have obtained:
-> Access to CLIMB <br>
-> Access to Sharedrive folders: <br>
-> - 01 Genomics Cell (required) <br>
-> - COVE folder (optional) <br>
----
+TODO: Add in section on accessing data from sftp
 
-## Install
-- Open terminal
-- Login to CLIMB
-- Run:
+## Installation
+Clone repo:
 ```bash
 git clone https://github.com/ukhsa-collaboration/gpha-climb-sars-cov2-lineage-line-list.git
 cd gpha-climb-sars-cov2-lineage-line-list
-conda create -n covid-ll python=3.7.6
+conda create -n linelist_env python
+conda activate linelist_env
+```
+User installation:
+```bash
 pip install .
 ```
-> [!Tip]
-> It is reccomended to run in screen or TMUX session in case of crash
----
+Developer installation:
+```bash
+pip install -e ".[dev]"
+```
 
 ## Usage
-##### To run the pipeline
-  - Navigate to gpha-climb-sars-cov2-lineage-line-list folder
-  - Activate the environment
-  - Run:
+
 ```bash
-cd gpha-climb-sars-cov2-lineage-line-list
-conda activate <env_name>
-covid-ll 
-(or python src/main.py)
+python run_linelist.py --input /path/to/combined_pangolin_results.csv --output /path/to/results/folder/
 ```
-##### To download to local machine
-  - Open a new terminal on local machine
-  - Navigate to desired parent directory
-  - Run:
-```bash
-scp -o 'ProxyJump=<username>.<surname>@158.119.147.128' -i <path-to-CLIMB-ssh-key> -r climb-covid19-brownm2@bham.covid19.climb.ac.uk:gpha-climb-sars-cov2-lineage-line-list/<yyymmdd>-covid-ll .
-```
-> [!Tip]
-> Default path-to-CLIMB-ssh-key: ~/SSH_Key
 
-> [!Caution]
-> Make sure to activate the correct environment to avoid errors
+## Config settings
 
-##### To run the notebook (notebook/lineage_line_groups_linkage.ipynb)
-  - Open editor of choice
-  - Open the notebook
-  - Copy the latest genomics_cell_merged file (from sharefolder, colindale_data/CPHL/Bioinformatics/01 Genomics Cell/03 Outbreaks/Epicell data release/) to relevant scan folder (optional)
-  - Run the notebook
-  - Fill in terminal prompts
-  - Send data to COVE
-> [!Tip]
-> Linux: when asked for user number only second value is required following running of -ls /run/user
----
+### Global params
+Global params are parameters that influence how the overall code runs or are used in both the recent and full reporting window.
 
-## Commands
-> [!Note]
-> Commands have been removed for simplicity <br>
-> Paths have been hardcoded <br>
-> If change to path(s) required, see src modules
----
+| Parameter       | Description                              |
+|-----------------|------------------------------------------|
+| period_size     | Size of period to break the reporting window into **in days**. Currently set to 14 (2 weeks). |
+| defined_variant | *Not yet populated*. Contains list of previously defined lineages to protect from collapsing/collapse no further than.  |
+
+### Recent reporting window
+
+Recent reporting window refers to the period of time in which percentage
+based lineage prevalence is calculated. The recent reporting window is
+split into  reporting periods (defined in global params as period_size)
+and a lineage must reach the percentage prevalence threshold in at least
+one of those periods to be protected in lineage grouping.
+
+Parameters relating to the initial reporting window:
+
+| Parameter          | Description                              |
+|--------------------|------------------------------------------|
+| max_lineages       | Maximum number of lineages to be protected. If more than max_lineages are identified to protect based on prevalence, these will be collapsed until max_lineages is reached. |
+| min_lineages       | Minimum number of lineages to be protected. If less than min_lineages are identified to protect based on prevalence, lineages will be collapsed until at least min_lineages are identified to protect. |
+| weeks_to_include   | Number of weeks to include in the recent reporting period. |
+| percent_prevalence | Percent prevalence a lineage must reach to be protected. |
+
+### Full reporting window
+
+Full reporting window refers to the total period of time to include
+samples from, excluding samples falling in the initial reporting window.
+Returns the specified number of most prevalent lineages across the whole
+reporting window. This is calculated as the full reporting window
+max_lineages value minus the number of lineages identified to protect from
+the recent reporting window. As a minimum, an additional two lineages
+should always be protected in the full reporting window to account for
+lineages that had high prevalence previously that has since decreased.
+
+Parameters relating to the full reporting window:
+
+| Parameter        | Description                              |
+|------------------|------------------------------------------|
+| weeks_to_include | Number of weeks to include in the full reporting period. |
+| max_lineages     | Maximum number of lineages to be protected. |
 
 ## Troubleshooting
-
-> [!Important]
-> Make sure all paths are entered correctly <br>
-> Make sure to activate the correct environment to avoid errors <br>
-> Linux: when asked for user number only second value is required following running of -ls /run/user <br>
----
-
-## Change-log
-
----
-
-## To-do
-
-- [x] move related lineage grouping files into current repo
-- [x] restructure repo to follow of GPHA standards
-- [x] reformat auto_linelist.py and move away from stdout calls
-- [ ] \(Optional) convert lineage_line_groups_linkage.ipynb notebook -> script
-- [ ] \(Optional) task
-
----
