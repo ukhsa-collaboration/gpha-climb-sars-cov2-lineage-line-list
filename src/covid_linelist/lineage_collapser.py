@@ -12,7 +12,7 @@ class LineageCollapser:
     def __init__(
             self, 
             dataframe: pd.DataFrame,
-            lineages_col: Union[str, int],
+            lineages_col: str | int,
             totals_col: Union[str, int],
             pango_aliases: dict,
             min_level: int = 2,
