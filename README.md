@@ -79,7 +79,7 @@ reporting window. This is calculated as the full reporting window
 max_lineages value minus the number of lineages identified to protect from
 the recent reporting window. As a minimum, an additional two lineages
 should always be protected in the full reporting window to account for
-lineages that had high prevalence previously that has since decreased.
+lineages that had high prevalence previously that have since decreased.
 
 Parameters relating to the full reporting window:
 
