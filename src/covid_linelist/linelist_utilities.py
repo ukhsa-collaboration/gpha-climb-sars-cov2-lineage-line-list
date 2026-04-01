@@ -252,7 +252,7 @@ def get_lineages_to_protect(
     for period in periods_to_protect:
         lineage_list += get_lineages_above_threshold(counts_by_period_df, period, percent_threshold, "lineage")
     lineage_list = list(set(lineage_list))
-    # If Unassigned in iniital list, +1 to  the max and min lineage values as don't want
+    # If Unassigned in initial list, +1 to the max and min lineage values as don't want
     # to include Unassigned in lineage total.
     if "Unassigned" in lineage_list:
         logging.info("""Unassigned in recent reporting window lineage list, adding additional lineage to min
