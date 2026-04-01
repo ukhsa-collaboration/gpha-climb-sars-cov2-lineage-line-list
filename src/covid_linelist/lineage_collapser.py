@@ -305,7 +305,7 @@ class LineageCollapser:
         return thresholds
 
     def collapse_based_on_pct(
-            self, records_pct: Union[int, float], convert_back: bool = True
+            self, records_pct: int | float, convert_back: bool = True
     ) -> pd.DataFrame:
         self.collapsed = (
             self.data.copy()
