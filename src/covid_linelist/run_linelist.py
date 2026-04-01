@@ -55,7 +55,7 @@ def set_up_logger(stdout_file):
 
 # Main function
 def main():
-    "Main function description here"
+    "Entry point for main run_linelist script"
 
     # Retrieve command line arguments:
     args = get_args()  # noqa: F841
