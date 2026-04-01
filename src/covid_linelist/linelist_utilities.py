@@ -210,7 +210,7 @@ def get_lineages_above_threshold(
     lineage_column: str
     ) -> list[str]:
     """Check which lineages should be protected based on reaching a percent threshold in a given time period.
-    Used by get_lineages_to_protect to re-check lineages reaching protection during collapsing process when triyng to reach
+    Used by get_lineages_to_protect to re-check lineages reaching protection during collapsing process when trying to reach
     max or min number of lineages required.
     Arguments:
         counts_by_period_df -- Dataframe containing lineage counts per reporting period
