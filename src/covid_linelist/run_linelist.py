@@ -104,7 +104,7 @@ def main():
         collection_date=range_end,
         fill_blanks=True
     )
-    #  Filter rows to required timeframe.
+    # Filter rows to required timeframe.
     lineage_df = llu.filter_lineage_df_to_date_cutoff(
         lineage_df=lineage_df,
         filter_end_date=range_end,
@@ -125,13 +125,13 @@ def main():
     ## Identify lineages to protect
     # Retrieve alias key json from COG-UK website
     pango_aliases_dict = llu.get_pango_aliases(do_filter=True)
-    # Get reporting periods to protect within
+    # Get reporting periods to protect within recent reporting window
     reporting_periods = llu.get_periods_to_protect(
         reporting_periods=counts_by_reporting_period_df['reporting_period'],
         end_date=range_end,
         timeframe_length=timeframe_recent
     )
-    # Identify lineages to protect in last x weeks
+    # Identify lineages to protect in the recent reporting window/last x weeks
     lineages_to_protect_list = llu.get_lineages_to_protect(
         counts_by_period_df=counts_by_reporting_period_df,
         periods_to_protect=reporting_periods,
@@ -168,7 +168,7 @@ def main():
     # Get collapsed alias at correct levels for assigning groups
     lc.collapse_based_on_threshold(threshold=10000) # TODO: Update threshold
 
-    # Mask anything not in combined_protect list as 'Other'
+    # Mask anything not in lineages to protect list as 'Other'
     collapsed_masked_counts_df = llu.mask_less_prevalent_values(counts_df=lc.collapsed,
                                                                      lineages_to_leave_unmasked={
                                                                         "collapsed_alias" : lineages_to_protect_list
@@ -185,10 +185,10 @@ def main():
     llu.write_to_csv(result_df = collapsed_masked_counts_df,
                       outdir=out_dir,
                       filename=f"{today_date}_year_lineage_masking.csv")
-    # Sample records with unaliased lineage and collapsed alias
+    # Sample records with unaliased lineage and collapsed alias groups
     llu.write_to_csv(result_df = lineage_df,
-                      outdir=out_dir,
-                      filename=f"{today_date}_year_full_lineage_metadata.csv")
+                     outdir=out_dir,
+                     filename=f"{today_date}_year_full_lineage_metadata.csv")
 
     # Write to logs if component finished successfully (or not):
     logging.info("Linelist file successfully generated")
