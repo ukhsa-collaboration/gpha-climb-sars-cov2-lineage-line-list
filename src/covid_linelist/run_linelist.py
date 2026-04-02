@@ -85,7 +85,6 @@ def main():
     timeframe_full = config_dict["full_reporting_window"]["weeks_to_include"]
     max_lineages_full = config_dict["full_reporting_window"]["max_lineages"]
     # Other variants to group as lineages of interest e.g. previously defined variants
-    #defined_variants = config_dict["global_params"]["defined_variants"]
     ## Prepare sample data for prevalence calculations
     # Read in required columns from input csv with lineage designations
     try:

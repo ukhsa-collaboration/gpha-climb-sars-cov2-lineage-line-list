@@ -1,6 +1,5 @@
 global_params:
   period_size: 14
-  defined_variants: {}
 recent_reporting_window:
   max_lineages: 10
   min_lineages: 1
