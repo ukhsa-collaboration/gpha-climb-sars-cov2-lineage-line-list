@@ -374,5 +374,5 @@ class LineageCollapser:
             else:
                 thresholds = list(range(1_000, 11_000, 1_000))
         else:
-            thresholds = sorted(list(thresholds))
+            thresholds = sorted(thresholds)
         return thresholds
