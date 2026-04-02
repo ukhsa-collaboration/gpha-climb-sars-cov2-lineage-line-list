@@ -74,10 +74,10 @@ Parameters relating to the initial reporting window:
 
 Full reporting window refers to the total period of time to include
 samples from, excluding samples falling in the initial reporting window.
-Returns the specified number of most prevalent lineages across the whole
-reporting window. This is calculated as the full reporting window
-max_lineages value minus the number of lineages identified to protect from
-the recent reporting window. As a minimum, an additional two lineages
+The number of most prevalent lineages to include from the full reporting
+period is calculated as the max_lineages value for the full reporting window
+minus the number of lineages identified to protect in the recent
+reporting window. As a minimum, an additional two lineages
 should always be protected in the full reporting window to account for
 lineages that had high prevalence previously that have since decreased.
 
