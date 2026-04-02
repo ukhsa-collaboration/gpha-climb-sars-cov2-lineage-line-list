@@ -3,7 +3,7 @@ name = "gpha-climb-sars-cov2-lineage-line-list"
 version = "3.1.0"
 description = "Short description here"
 authors = [{name = "Mike Brown", email = "michael.d.brown@ukhsa.gov.uk"}]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = ["pandas", "pyyaml", "climb-onyx-client", "python-dateutil", "requests", "pango-aliasor"]
 
 [tool.setuptools.dynamic]
