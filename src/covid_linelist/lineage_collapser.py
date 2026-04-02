@@ -368,7 +368,7 @@ class LineageCollapser:
 
     def sort_or_set_thresholds(self, percents, thresholds):
         if not thresholds:
-            if percents:
+            if percents:  # noqa SIM108
                 thresholds = list(range(5, 35, 5))
             else:
                 thresholds = list(range(1_000, 11_000, 1_000))
