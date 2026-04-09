@@ -44,11 +44,14 @@ def read_lineage_reports_csv(input_file: os.path) -> pd.DataFrame:
     cols_to_keep = [
         "taxon", "sample_id", "central_sample_id", "molis_id", "collection_date",
         "lineage", "scorpio_call", "version", "pangolin_version", "scorpio_version",
-        "qc_status"
+        "qc_status","Specimen_Number","cdr_specimen_request_sk","cdr_opie_id"
         ]
     with Path(input_file).open("r") as file:
         input_df = pd.read_csv(file, 
-                               usecols=lambda x: x in cols_to_keep
+                               usecols=lambda x: x in cols_to_keep,
+                               dtype={'Specimen_Number': str,
+                                      'cdr_specimen_request_sk': str,
+                                      'cdr_opie_id': str}
                                )
     return input_df
 
