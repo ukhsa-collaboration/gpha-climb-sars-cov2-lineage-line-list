@@ -5,13 +5,15 @@ import pandas as pd
 import pytest
 from covid_linelist import linelist_utilities as ull
 
-test_data_path = Path(Path(__file__).resolve().parent / "test_data")
+TEST_DATA_PATH = Path(Path(__file__).resolve().parent / "test_data")
+
+END_DATE = date(2026, 3, 30)
 
 
 @pytest.fixture
 def test_lineage_df():
     lineage_df = pd.read_csv(
-        Path(test_data_path / "test_data.csv"),
+        Path(TEST_DATA_PATH / "test_data.csv"),
         parse_dates=["collection_date", "expected_period"],
         dayfirst=True,
     )
@@ -30,10 +32,9 @@ def test_add_reporting_period_column(test_lineage_df):
     """
     ## test data has samples collected from 02/12/2025 - 31/03/2026, a range of <20 weeks
     ## Get Monday of current week as end of range for any time periods calculated.
-    end_date = date(2026, 3, 30)
     actual = ull.add_reporting_period_column(
         lineage_df=test_lineage_df,
-        end_date=end_date,
+        end_date=END_DATE,
         previous_weeks_to_include=20,
         period_size=7,  # days
     )
@@ -53,3 +54,11 @@ def test_add_reporting_period_column(test_lineage_df):
         f'Expected the column "reporting_period" created by the function to match "expected_period" in the test data,'
         f'but these rows do not match:\n{actual.loc[~actual["expected_period"]==actual["reporting_period"]]}'
     )
+
+
+def test_filter_lineage_df_to_date_cutoff(test_lineage_df):
+    # The date 10 weeks ago is the 19th Jan 2026, there are 12 samples with a collection date later than that.
+    filtered_lineage_df = ull.filter_lineage_df_to_date_cutoff(
+        lineage_df=test_lineage_df, filter_end_date=END_DATE, previous_weeks_to_include=10
+    )
+    assert len(filtered_lineage_df) == 12
