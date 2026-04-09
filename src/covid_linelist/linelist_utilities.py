@@ -290,7 +290,7 @@ def get_lineages_to_protect(
             lineage_list = list(set(collapsed_list))
     # If more than max_lineages >5%, collapse down until have max number
     elif len(lineage_list) > max_lineages:
-        threshold = 0
+        threshold = 1
         while len(lineage_list) > max_lineages:
             # Increment threshold size of lineage group each iteration
             threshold += 1
