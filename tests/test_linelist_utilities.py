@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+
 from covid_linelist import linelist_utilities as ull
 
 TEST_DATA_PATH = Path(Path(__file__).resolve().parent / "test_data")
@@ -52,13 +53,29 @@ def test_add_reporting_period_column(test_lineage_df):
 
     assert actual["reporting_period"].equals(actual["expected_period"]), (
         f'Expected the column "reporting_period" created by the function to match "expected_period" in the test data,'
-        f'but these rows do not match:\n{actual.loc[~actual["expected_period"]==actual["reporting_period"]]}'
+        f"but these rows do not match:\n{actual.loc[~actual['expected_period'] == actual['reporting_period']]}"
     )
 
 
 def test_filter_lineage_df_to_date_cutoff(test_lineage_df):
+    """
+    This functions filters the lineage df based on date range which is between a specified filter_end_date and the
+    number of previous_weeks_to_include. Date must not be str, must be datetime object
+    Noting that the function rolls the date back to the Monday of the week, then goes back the provided number of weeks.
+    """
     # The date 10 weeks ago is the 19th Jan 2026, there are 12 samples with a collection date later than that.
     filtered_lineage_df = ull.filter_lineage_df_to_date_cutoff(
         lineage_df=test_lineage_df, filter_end_date=END_DATE, previous_weeks_to_include=10
     )
-    assert len(filtered_lineage_df) == 12
+    assert (l := len(filtered_lineage_df)) == 12, f"Expected 12 samples after filtering, got {l}"
+
+    # The function rolls back to Monday before finding the date to filter to the provided number of weeks previous. When
+    # providing a non-Monday date in the same week, should get the same return
+
+    filtered_lineage_df_2 = ull.filter_lineage_df_to_date_cutoff(
+        lineage_df=test_lineage_df, filter_end_date=date(2026, 4, 1), previous_weeks_to_include=10
+    )
+    assert filtered_lineage_df.equals(filtered_lineage_df_2), (
+        "Expected these dataframes to match - check that the function rolls back to Monday before filtering."
+    )
+
