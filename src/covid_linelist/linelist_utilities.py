@@ -425,11 +425,21 @@ def collapse_lineages_to_protected_levels(
 
 def add_lineage_group_to_metadata(lineage_df: pd.DataFrame, counts_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Adds lineage group column to sample metadata.
+    Adds lineage group column to dataframe containing sample metadata. Lineage
+    groups are taken from a dataframe containing counts of samples in each lineage
+    per reporting period and the lineage group for each.
+    Arguments:
+        lineage_df -- Dataframe containing pangolin lineage info for each sample
+        counts_df -- Dataframe containing counts of lineages and the lineage group
+                     each lineage falls into.
+    Outputs:
+        lineage_df -- Updated lineage df with lineage group column addded
     """
-    # Subset required columns
+    # Subset required columns - just need the lineage and its group. Drop
+    # duplicate entries in the sub-setted table. origintating from where a
+    # lineage is present in more than one reporting period in the input counts df.
     counts_df = counts_df[["lineage", "collapsed_alias"]].drop_duplicates()
-    # Merge dataframes and rename column to lineage group
+    # Merge dataframes and rename collapsed alias column to lineage group
     lineage_df = (
         lineage_df
         .merge(counts_df, on="lineage")
