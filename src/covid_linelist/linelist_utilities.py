@@ -265,9 +265,12 @@ def get_lineages_to_protect(
     # If less than the min number of lineages are over the % threshold, collapse until at least  the minimum
     # number of lineages reaches 5% prevalence:
     if len(lineage_list) < min_lineages:
-        # Initial threshold of 1 - i.e. lineage can be called as own group if one sample in it
+        # Starting number for threshold is 1 - this will get incremented on first iteration of the while loop
+        # so that in the first round of collapsing a lineage has to have at least two samples in it to not
+        # be collapsed. The threshold will continue to be incremented by 1 until the min number of lineages is
+        # reached.
         threshold = 1
-        # Loop through this code, collapsing lineages up to minimum threshold size of group and recalculating
+        # Loop through this code, collapsing lineages to minimum threshold size of group and recalculating
         # % prevalence in each time period until the min number of lineages is reached
         while len(lineage_list) < min_lineages:
             # Increment threshold size of lineage group each iteration
@@ -293,6 +296,10 @@ def get_lineages_to_protect(
             lineage_list = list(set(collapsed_list))
     # If more than max_lineages >5%, collapse down until have max number
     elif len(lineage_list) > max_lineages:
+        # Starting number for threshold is 1 - this will get incremented on first iteration of the while loop
+        # so that in the first round of collapsing a lineage has to have at least two samples in it to not
+        # be collapsed. The threshold will continue to be incremented by 1 until the max number of lineages is
+        # reached.
         threshold = 1
         while len(lineage_list) > max_lineages:
             # Increment threshold size of lineage group each iteration
