@@ -141,7 +141,9 @@ def main():
     )
     # Add Unassigned to list as don't want to include in lineage to protect total here
     lineages_to_protect_list = list(set(lineages_to_protect_list + ["Unassigned"]))
-    # Identify lineages to protect in last 52 weeks up until 6 weeks ago
+    # Identify lineages to protect in the full reporting window, minus recent reporting window
+    # covered above by get_lineages_to_protect.
+    # E.g. samples from the last 52 weeks up until 6 weeks ago.
     # +1 to account for Unassigned as don't want this including in the additional lineages here
     num_additional_lineages = max_lineages_full - len(lineages_to_protect_list) + 1
     # Get lineages to protect for full reporting period, excluding recent reporting period
