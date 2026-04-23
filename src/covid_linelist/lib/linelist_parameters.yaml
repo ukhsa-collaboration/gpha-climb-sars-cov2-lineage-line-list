@@ -1,10 +1,10 @@
 global_params:
   period_size: 14
 recent_reporting_window:
-  max_lineages: 10
+  max_lineages: 8
   min_lineages: 1
   weeks_to_include: 6
   percent_prevalence: 5
 full_reporting_window:
-  max_lineages: 12
+  max_lineages: 14
   weeks_to_include: 52
