@@ -281,7 +281,7 @@ def get_lineages_to_protect(
                 dataframe=counts_by_period_df,
                 lineages_col='lineage',
                 totals_col='seq_count',
-                min_level=2,
+                min_level=1,
                 collapsed_col='collapsed_alias',
                 pango_aliases=pango_dict
                 )
@@ -309,7 +309,7 @@ def get_lineages_to_protect(
                 dataframe=counts_by_period_df,
                 lineages_col='lineage',
                 totals_col='seq_count',
-                min_level=2,
+                min_level=1,
                 collapsed_col='collapsed_alias',
                 pango_aliases=pango_dict
                 )
