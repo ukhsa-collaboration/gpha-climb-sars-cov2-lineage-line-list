@@ -161,7 +161,7 @@ def main():
     lc = LineageCollapser(dataframe=counts_by_reporting_period_df,
                           lineages_col='lineage',
                           totals_col='seq_count',
-                          min_level=2,
+                          min_level=1,
                           protect_lineages=lineages_to_protect_list,
                           collapsed_col='collapsed_alias',
                           pango_aliases=pango_aliases_dict
