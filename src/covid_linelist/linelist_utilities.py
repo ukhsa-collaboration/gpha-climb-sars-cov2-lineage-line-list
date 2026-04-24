@@ -199,7 +199,7 @@ def get_periods_to_protect(reporting_periods: pd.Series, end_date: dt.date, time
     start_date = end_date - dt.timedelta(weeks=timeframe_length)
     reporting_periods = pd.to_datetime(
         reporting_periods[
-            (reporting_periods > pd.to_datetime(start_date)) &
+            (reporting_periods >= pd.to_datetime(start_date)) &
             (reporting_periods < pd.to_datetime(end_date))
     ].unique(),
     format='%Y-%m-%d'
