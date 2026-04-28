@@ -15,7 +15,6 @@ from pathlib import Path
 import pandas as pd
 import requests
 import yaml
-
 from covid_linelist.lineage_collapser import LineageCollapser
 
 
