@@ -251,6 +251,7 @@ def get_lineages_to_protect(
         lineage_list -- List of lineages that should be protected
     """
     lineage_list = []
+    counts_by_period_df = counts_by_period_df[counts_by_period_df['reporting_period'].isin(periods_to_protect)]
     # Get initial lineage list based on lineages above the % threshold in each time period before any collapsing
     for period in periods_to_protect:
         lineage_list += get_lineages_above_threshold(counts_by_period_df, period, percent_threshold, "lineage")
