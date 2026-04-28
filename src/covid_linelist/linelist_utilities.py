@@ -287,11 +287,14 @@ def get_lineages_to_protect(
                 pango_aliases=pango_dict
                 )
             lc.collapse_based_on_threshold(threshold=threshold)
-            # Recalculate % prevalences in each time period with new collapsed groups
+            # Get collapsed counts and percentages in each reporting period with new threshold
             collapsed_period_df = pd.DataFrame(lc.collapsed)[['reporting_period','collapsed_alias', 'seq_count']]
-            counts_by_period_df = collapsed_period_df.groupby(['reporting_period','collapsed_alias']).sum(numeric_only=True).reset_index()
-            counts_by_period_df = add_percentages_column(counts_by_period_df)
-            counts_by_period_df.rename(columns={'collapsed_alias': 'lineage'}, inplace=True)
+            collapsed_counts_df = collapsed_period_df.groupby(['reporting_period','collapsed_alias']).sum(numeric_only=True).reset_index()
+            collapsed_counts_df = add_percentages_column(collapsed_counts_df)
+            # Recalculate % prevalences in each time period with new collapsed groups
+            for period in periods_to_protect:
+                collapsed_list += get_lineages_above_threshold(collapsed_counts_df, period, percent_threshold, "collapsed_alias")
+            lineage_list = list(set(collapsed_list))
             for period in periods_to_protect:
                 collapsed_list += get_lineages_above_threshold(counts_by_period_df, period, percent_threshold, "lineage")
             lineage_list = list(set(collapsed_list))
@@ -315,12 +318,13 @@ def get_lineages_to_protect(
                 pango_aliases=pango_dict
                 )
             lc.collapse_based_on_threshold(threshold=threshold)
+            # Get collapsed counts and percentages in each reporting period with new threshold
             collapsed_period_df = pd.DataFrame(lc.collapsed)[['reporting_period','collapsed_alias', 'seq_count']]
-            counts_by_period_df = collapsed_period_df.groupby(['reporting_period','collapsed_alias']).sum(numeric_only=True).reset_index()
-            counts_by_period_df = add_percentages_column(counts_by_period_df)
-            counts_by_period_df.rename(columns={'collapsed_alias': 'lineage'}, inplace=True)
+            collapsed_counts_df = collapsed_period_df.groupby(['reporting_period','collapsed_alias']).sum(numeric_only=True).reset_index()
+            collapsed_counts_df = add_percentages_column(collapsed_counts_df)
+            # Recalculate % prevalences in each time period with new collapsed groups
             for period in periods_to_protect:
-                collapsed_list += get_lineages_above_threshold(counts_by_period_df, period, percent_threshold, "lineage")
+                collapsed_list += get_lineages_above_threshold(collapsed_counts_df, period, percent_threshold, "collapsed_alias")
             lineage_list = list(set(collapsed_list))
     # Return lineages if max_lineage number reached without any collapsing
     else:
