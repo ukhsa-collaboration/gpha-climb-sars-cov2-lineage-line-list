@@ -295,7 +295,6 @@ def get_lineages_to_protect(
             for period in periods_to_protect:
                 collapsed_list += get_lineages_above_threshold(collapsed_counts_df, period, percent_threshold, "collapsed_alias")
             lineage_list = list(set(collapsed_list))
-            lineage_list = list(set(collapsed_list))
     # If more than max_lineages >5%, collapse down until have max number
     elif len(lineage_list) > max_lineages:
         # Starting number for threshold is 1 - this will get incremented on first iteration of the while loop
