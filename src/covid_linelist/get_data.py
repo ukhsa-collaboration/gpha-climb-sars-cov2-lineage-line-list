@@ -8,6 +8,7 @@ import pathlib
 import logging
 import glob
 import datetime
+import re
 
 ## Data from the SARS-CoV-2 pipeline will be sent to an sFTP
 # sftpcol04.unix.phe.gov.uk port 443
@@ -89,27 +90,34 @@ class sFTP():
             logging.error(status)
     
     
-    def get_sFTP_data(self):
+    def get_sFTP_data(self, pattern: str):
         # return list of sub-folders within the remote data folder path
         folders = self.sftp.listdir(path=self.remote_data_folder)
         logging.info(f"list of sub-folders found in path {self.remote_data_folder}: {", ".join(folders)}")
-        pattern = '*.csv'
-        # iterate over sub-folders for csv files and download to a local path copy        
+        #pattern = '*.csv'
+        # iterate over sub-folders for csv files and download to a local path copy   
         for i, folder in enumerate(folders):
-            # if folder doesn't exist locally create it
-            local_folder = f"{self.outdir}/{folder}"
-            os.makedirs(local_folder, exist_ok=True)
-            # return et csv files within remote folder
-            remote_folder = f"{self.remote_data_folder}/{folder}"
-            file_list = self.sftp.listdir(remote_folder)
-            # return list for .csv files within sub-folder
-            matched_files = [f for f in file_list if fnmatch.fnmatch(f, pattern)]
-            logging.info(f"{len(matched_files)} csv files found in {remote_folder}: {", ".join(matched_files)}")
-            for file_name in matched_files:
-                # download files from remote folder -> local folder
-                logging.info(f"processing: {remote_folder}/{file_name}")
-                self.sftp.get(f'{remote_folder}/{file_name}', f'{local_folder}/{file_name}')
-                logging.info(f"copied: {remote_folder}/{file_name} --> {local_folder}/{file_name}")
+            # check formate is as expected, i.e. check folder name contains a digit (date)
+            if bool(re.search(r'\d', folder)) is True:
+                # if folder doesn't exist locally create it
+                local_folder = f"{self.outdir}/{folder}"
+                os.makedirs(local_folder, exist_ok=True)
+                # return et csv files within remote folder
+                remote_folder = f"{self.remote_data_folder}/{folder}"
+                file_list = self.sftp.listdir(remote_folder)
+                # return list for .csv files within sub-folder
+                matched_files = [f for f in file_list if fnmatch.fnmatch(f, pattern)]
+                logging.info(f"{len(matched_files)} csv files found in {remote_folder}: {", ".join(matched_files)}")#
+                if len(matched_files) == 0:
+                    continue
+                else:
+                    for file_name in matched_files:
+                        # download files from remote folder -> local folder
+                        logging.info(f"processing: {remote_folder}/{file_name}")
+                        self.sftp.get(f'{remote_folder}/{file_name}', f'{local_folder}/{file_name}')
+                        logging.info(f"copied: {remote_folder}/{file_name} --> {local_folder}/{file_name}")
+            else:
+                continue
         # Need to handle error: OSError: Not a directory
 
 
@@ -150,8 +158,8 @@ def process_ont_results_df(ont_results_df, sample_sheet) -> pd.DataFrame:
 
     # get date via string split and taking the last 8 digits
     df = df.assign(collection_date=str(df["taxon"]).split("_")[0][-8:])
-    #print(df)
-    df = df.assign(central_sample_id=str(df["taxon"]).split("_")[3:4])
+    #df = df.assign(central_sample_id=str(df["taxon"]).split("_")[3:4])
+    df = df.assign(central_sample_id=df["molis_id"])#.split("\n")[0])
     return df
     
 
@@ -183,7 +191,7 @@ def process_ont_results_folder(ont_results_folder):
     
 
 def remove_ont_controls(df: pd.DataFrame) -> pd.DataFrame:
-    identifier = "positive|negative|water"
+    identifier = "positive|negative|water|control|pos|neg|ctr"
     df = df[~df["molis_id"].str.contains(identifier, case=False)]
     return df
     
@@ -218,16 +226,18 @@ def process_illumina_results_df(illumina_results_df, date) -> pd.DataFrame:
     df = df.assign(collection_date=date)
 
     # central sample id is first part of taxon column
-    central_sample_id = str(df["taxon"]).split("_")[0]
+    # central_sample_id = str(df["taxon"]).split("_")[1].split("-")[0]
+    central_sample_id = str(df["taxon"]).split("-")[0].split(" ")[0]
+    central_sample_id = df["taxon"].str.split("-", expand=True)[0]
     df = df.assign(central_sample_id=central_sample_id)
     
     # molis id is 2nd part of taxon column and is 10 digits long
-    molis_id = str(df["taxon"]).split("_")[1][:10]
+    # molis_id = str(df["taxon"]).split("_")[1][:10]
+    molis_id = str(df["taxon"]).split("_")[1].split(".")[0].split("\nN")[0]
     df = df.assign(molis_id=molis_id)
-    
     # step code is the suffix of the taxon column
-    step_code = str(df["taxon"]).split("_")[1][10:].split("\nN")[0].strip("-")
-    df = df.assign(step_code=step_code)
+    # step_code = str(df["taxon"]).split("_")[1][10:].split("\nN")[0].strip("-")
+    # df = df.assign(step_code=step_code)
     return df
 
 
@@ -244,7 +254,7 @@ def process_illumina_results_folder(illumina_results_folder):
     
 
 def remove_illumina_controls(df: pd.DataFrame) -> pd.DataFrame:
-    identifier = "positive|negative|water"
+    identifier = "positive|negative|water|control|pos|neg|ctr"
     df = df[~df["taxon"].str.contains(identifier, case=False)]
     return df
 
@@ -263,10 +273,41 @@ def process_results(local_dir: str) -> pd.DataFrame:
     ont_folders, illumina_folders = identify_ont_folders(parent_folder=local_dir)
     df_illumina = process_illumina_results(illumina_folders)
     df_ont = process_ont_results(ont_folders)
-    df_results = pd.concat([df_illumina, df_ont])
-    # print(df_results)
+    df_results = pd.concat([df_illumina, df_ont], ignore_index=True)
+    df_results = df_results.reindex(columns=[*df_results.columns.tolist(), 'Specimen_Number', 'cdr_specimen_request_sk', 'cdr_opie_id'])
+    df_results["molis_id"] = df_results["molis_id"].str[0:10]
+    # reorder columns
+    # ...
     return df_results
+
+
+# concat fasta files
+
+def concat_fasta(local_dir: str, date:str):
+    sub_folders = glob.glob(local_dir + "/*/")
+    sub_folders = [x for x in sub_folders if not x.startswith(f'{local_dir}/test.txt')]
+    identifier = "positive|negative|water|control|pos|neg|ctr"
+    fastas = []
+    for x, folder in enumerate(sub_folders):
+        print(folder)
+        fasta_files = glob.glob("*.fa*")
+        fastas.append(fasta_files)
+        print(fastas)
     
+    output_fas = open(f'{local_dir}/{date}_covid_ll.fasta', 'w')
+    file_count = len(fastas)
+    print(file_count)
+    for f in fastas:
+        print(f)
+        file_count += 1
+        fh = open(f)
+        for line in fh:
+            output_fas.write(line)
+        fh.close()
+    output_fas.close()
+
+
+
 ## run process        
         
 def main():
@@ -274,17 +315,20 @@ def main():
     cmds = cli()     
     
     # initiate connection to remote server and download of files. 
-    connection = sFTP(
-        username=cmds.username,
-        password=cmds.password,
-        outdir=cmds.outdir
-    )
-    connection.get_sFTP_data()
+    #connection = sFTP(
+    #    username=cmds.username,
+    #    password=cmds.password,
+    #    outdir=cmds.outdir
+    #)
+    #connection.get_sFTP_data_fa()
+    #connection.get_sFTP_data(pattern='*.csv')
+    #connection.get_sFTP_data(pattern='*.fa*')
     
-    # identify which sub-folders are ONT vs ....
     df = process_results(local_dir=cmds.outdir)
-    date = datetime.datetime.now()
+    date = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     df.to_csv(f"{cmds.outdir}/{date}_covid_ll.csv")
+    
+    #concat_fasta(local_dir=cmds.outdir, date=date)
     
 if __name__ == "__main__":
     sys.exit(main())
