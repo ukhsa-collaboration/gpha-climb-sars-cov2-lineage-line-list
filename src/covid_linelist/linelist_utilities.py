@@ -318,25 +318,13 @@ def get_lineages_to_protect(
         while len(lineage_list) < min_lineages:
             # Increment threshold size of lineage group each iteration
             threshold += 1
-            collapsed_list = []
-            # Collapse lineages to new threshold size
-            lc = LineageCollapser(
-                dataframe=counts_by_period_df,
-                lineages_col='lineage',
-                totals_col='seq_count',
-                min_level=1,
-                collapsed_col='collapsed_alias',
-                pango_aliases=pango_dict
+            lineage_list = collapse_and_recalculate_lineage_groups(
+                threshold,
+                percent_threshold,
+                counts_by_period_df,
+                pango_dict,
+                periods_to_protect
                 )
-            lc.collapse_based_on_threshold(threshold=threshold)
-            # Get collapsed counts and percentages in each reporting period with new threshold
-            collapsed_period_df = pd.DataFrame(lc.collapsed)[['reporting_period','collapsed_alias', 'seq_count']]
-            collapsed_counts_df = collapsed_period_df.groupby(['reporting_period','collapsed_alias']).sum(numeric_only=True).reset_index()
-            collapsed_counts_df = add_percentages_column(collapsed_counts_df)
-            # Recalculate % prevalences in each time period with new collapsed groups
-            for period in periods_to_protect:
-                collapsed_list += get_lineages_above_threshold(collapsed_counts_df, period, percent_threshold, "collapsed_alias")
-            lineage_list = list(set(collapsed_list))
     # If more than max_lineages >5%, collapse down until have max number
     elif len(lineage_list) > max_lineages:
         # Starting number for threshold is 1 - this will get incremented on first iteration of the while loop
@@ -347,24 +335,13 @@ def get_lineages_to_protect(
         while len(lineage_list) > max_lineages:
             # Increment threshold size of lineage group each iteration
             threshold += 1
-            collapsed_list = []
-            lc = LineageCollapser(
-                dataframe=counts_by_period_df,
-                lineages_col='lineage',
-                totals_col='seq_count',
-                min_level=1,
-                collapsed_col='collapsed_alias',
-                pango_aliases=pango_dict
+            lineage_list = collapse_and_recalculate_lineage_groups(
+                threshold,
+                percent_threshold,
+                counts_by_period_df,
+                pango_dict,
+                periods_to_protect
                 )
-            lc.collapse_based_on_threshold(threshold=threshold)
-            # Get collapsed counts and percentages in each reporting period with new threshold
-            collapsed_period_df = pd.DataFrame(lc.collapsed)[['reporting_period','collapsed_alias', 'seq_count']]
-            collapsed_counts_df = collapsed_period_df.groupby(['reporting_period','collapsed_alias']).sum(numeric_only=True).reset_index()
-            collapsed_counts_df = add_percentages_column(collapsed_counts_df)
-            # Recalculate % prevalences in each time period with new collapsed groups
-            for period in periods_to_protect:
-                collapsed_list += get_lineages_above_threshold(collapsed_counts_df, period, percent_threshold, "collapsed_alias")
-            lineage_list = list(set(collapsed_list))
     # Return lineages if max_lineage number reached without any collapsing
     else:
         lineage_list = list(set(lineage_list))
