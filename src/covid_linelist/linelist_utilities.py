@@ -258,7 +258,8 @@ def collapse_and_recalculate_lineage_groups(
         totals_col='seq_count',
         min_level=1,
         collapsed_col='collapsed_alias',
-        pango_aliases=pango_dict
+        pango_aliases=pango_dict,
+        protect_lineages=["BA.2.86", "BA.2", "BA.3", "JN.1"]
         )
     lc.collapse_based_on_threshold(threshold=threshold)
     # Get collapsed counts and percentages in each reporting period with new threshold
