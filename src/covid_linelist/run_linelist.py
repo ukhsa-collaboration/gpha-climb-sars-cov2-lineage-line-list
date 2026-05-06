@@ -23,8 +23,9 @@ def get_args():
     required. It is however recommended to keep the arguments below as
     a minimum for development purposes."""
     parser = argparse.ArgumentParser(
-        prog="covid linelist",
-        description="""Program for generating covid line list including groupings.
+        prog="run_linelist",
+        description="""Program for generating the covid linelist including
+        logic to collapse lineages into lineage groups if required.
         """,
     )
     parser.add_argument(
