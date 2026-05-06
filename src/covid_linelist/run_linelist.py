@@ -37,17 +37,17 @@ def get_args():
 
 
 # Logger set up
-def set_up_logger(stdout_file):
-    """Example logger set up which can be amended as required. In this example,
-    all logging messages go to a stdout log file, and error messages also go to
-    stderr log. If the component runs correctly, stderr is empty. The logger is
-    set to append mode so logs from older runs are not overwritten.
+def set_up_logger(log_file):
+    """Sets up logging for the covid linelist code. Logging level is set
+    to "INFO" and all logging messages are sent to a single log file. The
+    logger is set to append mode so logs from older runs are not
+    overwritten.
     """
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s")
 
-    out_handler = logging.FileHandler(stdout_file, mode="a")
+    out_handler = logging.FileHandler(log_file, mode="a")
     out_handler.setFormatter(formatter)
     logger.addHandler(out_handler)
 
