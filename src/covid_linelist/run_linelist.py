@@ -74,17 +74,27 @@ def main():
     # Read in params from config file
     config_file = resources.files("covid_linelist.lib").joinpath("linelist_parameters.yaml")
     config_dict = llu.read_config_file(config_file)
-    ## Set variable names from config
-    # Size of period to split data into
-    period_size = config_dict["global_params"]["period_size"]
-    # Params for % prevalence in recent timeframe
-    timeframe_recent =  config_dict["recent_reporting_window"]["weeks_to_include"]
-    max_lineages_recent = config_dict["recent_reporting_window"]["max_lineages"]
-    min_lineages_recent = config_dict["recent_reporting_window"]["min_lineages"]
-    percent_prevalence = config_dict["recent_reporting_window"]["percent_prevalence"]
-    # Params for full timeframe
-    timeframe_full = config_dict["full_reporting_window"]["weeks_to_include"]
-    max_lineages_full = config_dict["full_reporting_window"]["max_lineages"]
+    ### Set variable names from config
+    # Size of period to split data into in days e.g. period_size 14 = 2 weeks. Needs to be
+    # specified in days for add_reporting_period_column() to function correctly
+    period_size: int = config_dict["global_params"]["period_size"]
+    ## Params for % prevalence in recent timeframe
+    # Number of weeks to include in recent reporting period timeframe e.g. 6 = 6 weeks
+    timeframe_recent: int =  config_dict["recent_reporting_window"]["weeks_to_include"]
+    # Max number of lineages to return in recent reporting period e.g. 8 = max of 8 lineages
+    # can be returned by get_lineages_to_protect()
+    max_lineages_recent: int = config_dict["recent_reporting_window"]["max_lineages"]
+    # Min number of lineages to return in recent reporting period e.g. 1 = min of 1 lineages
+    # has to be returned by get_lineages_to_protect()
+    min_lineages_recent: int = config_dict["recent_reporting_window"]["min_lineages"]
+    # Percent prevalence for lineage to be protected e.g. 5 = 5% prevalence in given period
+    percent_prevalence: int = config_dict["recent_reporting_window"]["percent_prevalence"]
+    ## Params for full timeframe
+    # Number of weeks to include in full reporting timeframe e.g. 52 = 52 weeks
+    timeframe_full: int = config_dict["full_reporting_window"]["weeks_to_include"]
+    # Max number of lineages to return in the full reporting window. E.g. 14 = max of
+    # 14 lineages to be returned across the whole reporting period.
+    max_lineages_full: int = config_dict["full_reporting_window"]["max_lineages"]
     # Other variants to group as lineages of interest e.g. previously defined variants
     ## Prepare sample data for prevalence calculations
     # Read in required columns from input csv with lineage designations
