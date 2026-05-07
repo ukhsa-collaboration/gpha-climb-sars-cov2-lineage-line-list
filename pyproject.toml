@@ -1,10 +1,10 @@
 [project] # Update all fields in this section
 name = "gpha-climb-sars-cov2-lineage-line-list"
-version = "3.1.0"
+version = "1.1.0"
 description = "Short description here"
 authors = [{name = "Mike Brown", email = "michael.d.brown@ukhsa.gov.uk"}]
-requires-python = ">=3.8"
-dependencies = ["pandas", "pyyaml", "climb-onyx-client", "python-dateutil", "requests", "pango-aliasor"]
+requires-python = ">=3.14.0"
+dependencies = ["pandas", "pyyaml", "climb-onyx-client", "python-dateutil", "requests", "pango-aliasor", "paramiko", "Biopython"]
 
 [tool.setuptools.dynamic]
 version = {attr = "project_name_here.__version__"} # Add underscore separated repo name here
