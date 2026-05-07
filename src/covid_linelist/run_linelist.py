@@ -96,6 +96,9 @@ def main():
     # 14 lineages to be returned across the whole reporting period.
     max_lineages_full: int = config_dict["full_reporting_window"]["max_lineages"]
     # Other variants to group as lineages of interest e.g. previously defined variants
+    ## Lineage protection
+    # List of lineages to collapse no further than e.g. collapse linegaes no further than BA.3
+    collapse_limit_list: list[str] = config_dict["lineages_to_protect"]["lineage_collapse_limits"]
     ## Prepare sample data for prevalence calculations
     # Read in required columns from input csv with lineage designations
     try:
@@ -148,7 +151,8 @@ def main():
         percent_threshold=percent_prevalence,
         max_lineages=max_lineages_recent,
         min_lineages=min_lineages_recent,
-        pango_dict=pango_aliases_dict
+        pango_dict=pango_aliases_dict,
+        lineage_collapse_limits=collapse_limit_list
     )
     # Add Unassigned to list as don't want to include in lineage to protect total here
     lineages_to_protect_list = list(set(lineages_to_protect_list + ["Unassigned"]))
