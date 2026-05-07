@@ -79,3 +79,41 @@ def test_filter_lineage_df_to_date_cutoff(test_lineage_df):
         "Expected these dataframes to match - check that the function rolls back to Monday before filtering."
     )
 
+
+def test_lineage_counts_per_period(test_lineage_df):
+    """Get the counts of lineages in a reporting period"""
+    test_lineage_df = test_lineage_df.rename(columns={"expected_period": "reporting_period"})
+
+    counts = ull.get_lineage_counts_per_period(test_lineage_df)
+
+    assert counts.iloc[12]["seq_count"] == 3
+    assert counts.iloc[10]["seq_count"] == 2
+
+    print(
+        "Expected 2 counts of XFG.1.1.1 in period 2026-03-16 (row 10) and 3 counts of XFG.1.1 in "
+        "period 2026-03-23 (row 12). "
+        f"\ngot:\n{counts}"
+    )
+
+
+def test_add_percentages_column():
+    counts_by_period = pd.DataFrame(
+        data=[
+            ["2026-03-23", "KP.2.3", 1, 10.0],
+            ["2026-03-23", "XFG.1.1", 3, 30.0],
+            ["2026-03-23", "XFG.1.1.1", 5, 50.0],
+            ["2026-03-23", "KP.2", 1, 10.0],
+            ["2026-02-09", "KP.2.3", 1, 20.0],
+            [
+                "2026-02-09",
+                "XFG.1.1",
+                1,
+                20.0,
+            ],
+            ["2026-02-09", "XFG.1.1.1", 3, 60.0],
+        ],
+        columns=["reporting_period", "lineage", "seq_count", "expected_pct"],
+    )
+
+    df = ull.add_percentages_column(counts_by_period)
+    assert pd.Series.equals(df["pct_of_reporting_period"], df["expected_pct"])
