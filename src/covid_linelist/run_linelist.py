@@ -168,7 +168,7 @@ def main():
     ## Lineage collapsing after identifying lineages to protect
     # TODO: Add to own function and set threshold to n+1 number rows in df/
     # change which df use for the collapsing bit.
-    # Collapse down lineages not in lineages_to_protect_list
+    # Collapse down any lineages not in lineages_to_protect_list
     lc = LineageCollapser(dataframe=counts_by_reporting_period_df,
                           lineages_col='lineage',
                           totals_col='seq_count',
@@ -178,7 +178,8 @@ def main():
                           pango_aliases=pango_aliases_dict
                           )
     # Get collapsed alias at correct levels for assigning groups
-    lc.collapse_based_on_threshold(threshold=10000) # TODO: Update threshold
+    collapse_threshold = len(lineage_df) + 1
+    lc.collapse_based_on_threshold(threshold=collapse_threshold)
 
     # Mask anything not in lineages to protect list as 'Other'
     collapsed_masked_counts_df = llu.mask_less_prevalent_values(counts_df=lc.collapsed,
