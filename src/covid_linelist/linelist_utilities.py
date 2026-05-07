@@ -234,7 +234,8 @@ def collapse_and_recalculate_lineage_groups(
     percent_threshold: int,
     counts_by_period_df: pd.DataFrame,
     pango_dict: dict,
-    periods_to_protect: list
+    periods_to_protect: list,
+    lineage_collapse_limits: list[str]
     ):
     """Collapses a dataframe of lineage counts based on given threshold size
     and then calculates the number of lineage groups over the percent prevalence
@@ -247,6 +248,8 @@ def collapse_and_recalculate_lineage_groups(
         counts_by_period_df -- Dataframe containing per reporting period counts of lineages
         pango_dict -- Dict containing pango aliases from COG-UK
         periods_to_protect -- List of periods to apply collapsing to
+        lineage_collapse_limits -- List of lineages that prevent collapsing all the way
+                           back to root and instead limit to variants e.g. BA.3.
     Outputs:
         lineage_list -- List of lineages that meet threshold group size and percent
                         prevalence threshold and will be protected
@@ -259,7 +262,7 @@ def collapse_and_recalculate_lineage_groups(
         min_level=1,
         collapsed_col='collapsed_alias',
         pango_aliases=pango_dict,
-        protect_lineages=["BA.2.86", "BA.2", "BA.3", "JN.1"]
+        protect_lineages=lineage_collapse_limits
         )
     lc.collapse_based_on_threshold(threshold=threshold)
     # Get collapsed counts and percentages in each reporting period with new threshold
@@ -279,7 +282,8 @@ def get_lineages_to_protect(
     percent_threshold: int,
     max_lineages: int,
     min_lineages: int,
-    pango_dict: dict
+    pango_dict: dict,
+    lineage_collapse_limits: list[str]
     ) -> list[str]:
     """Identify lineages to protect from collapsing in recent reporting period
     based on prevalence.
@@ -290,6 +294,8 @@ def get_lineages_to_protect(
         max_lineages -- Maximum number of lineages to return in lineage list
         min_lineages - Minimum number of lineages to return in lineage list
         pango_dict -- Dict containing pango aliases from COG-UK
+        lineage_collapse_limits -- List of lineages that prevent collapsing all the way
+                           back to root and instead limit to variants e.g. BA.3.
     Outputs:
         lineage_list -- List of lineages that should be protected
     """
@@ -324,7 +330,8 @@ def get_lineages_to_protect(
                 percent_threshold,
                 counts_by_period_df,
                 pango_dict,
-                periods_to_protect
+                periods_to_protect,
+                lineage_collapse_limits
                 )
     # If more than max_lineages >5%, collapse down until have max number
     elif len(lineage_list) > max_lineages:
@@ -341,7 +348,8 @@ def get_lineages_to_protect(
                 percent_threshold,
                 counts_by_period_df,
                 pango_dict,
-                periods_to_protect
+                periods_to_protect,
+                lineage_collapse_limits
                 )
     # Return lineages if max_lineage number reached without any collapsing
     else:
