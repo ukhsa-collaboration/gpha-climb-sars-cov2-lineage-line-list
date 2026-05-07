@@ -8,3 +8,6 @@ recent_reporting_window:
 full_reporting_window:
   max_lineages: 14
   weeks_to_include: 52
+lineages_to_protect:
+  manual_protect: []
+  lineage_collapse_limits: ["BA.2.86", "BA.2", "BA.3", "JN.1"]
