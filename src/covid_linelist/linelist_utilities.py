@@ -15,7 +15,6 @@ from pathlib import Path
 import pandas as pd
 import requests
 import yaml
-
 from covid_linelist.lineage_collapser import LineageCollapser
 
 
@@ -230,6 +229,50 @@ def get_lineages_above_threshold(
     to_protect += over_threshold_list
     return to_protect
 
+def collapse_and_recalculate_lineage_groups(
+    threshold: int,
+    percent_threshold: int,
+    counts_by_period_df: pd.DataFrame,
+    pango_dict: dict,
+    periods_to_protect: list
+    ):
+    """Collapses a dataframe of lineage counts based on given threshold size
+    and then calculates the number of lineage groups over the percent prevalence
+    specified.
+    Arguments:
+        threshold - Minimum group size - lineage groups under this value will be
+                    collapsed into their parent lineage
+        percent_threshold - % of samples of a given lineage in a given period
+                            needed to protect a lineage
+        counts_by_period_df -- Dataframe containing per reporting period counts of lineages
+        pango_dict -- Dict containing pango aliases from COG-UK
+        periods_to_protect -- List of periods to apply collapsing to
+    Outputs:
+        lineage_list -- List of lineages that meet threshold group size and percent
+                        prevalence threshold and will be protected
+    """
+    collapsed_list = []
+    lc = LineageCollapser(
+        dataframe=counts_by_period_df,
+        lineages_col='lineage',
+        totals_col='seq_count',
+        min_level=1,
+        collapsed_col='collapsed_alias',
+        pango_aliases=pango_dict,
+        protect_lineages=["BA.2.86", "BA.2", "BA.3", "JN.1"]
+        )
+    lc.collapse_based_on_threshold(threshold=threshold)
+    # Get collapsed counts and percentages in each reporting period with new threshold
+    collapsed_period_df = pd.DataFrame(lc.collapsed)[['reporting_period','collapsed_alias', 'seq_count']]
+    collapsed_counts_df = collapsed_period_df.groupby(['reporting_period','collapsed_alias']).sum(numeric_only=True).reset_index()
+    collapsed_counts_df = add_percentages_column(collapsed_counts_df)
+    # Recalculate % prevalences in each time period with new collapsed groups
+    for period in periods_to_protect:
+        collapsed_list += get_lineages_above_threshold(collapsed_counts_df, period, percent_threshold, "collapsed_alias")
+    lineage_list = list(set(collapsed_list))
+
+    return lineage_list
+
 def get_lineages_to_protect(
     counts_by_period_df: pd.DataFrame,
     periods_to_protect: int,
@@ -276,25 +319,13 @@ def get_lineages_to_protect(
         while len(lineage_list) < min_lineages:
             # Increment threshold size of lineage group each iteration
             threshold += 1
-            collapsed_list = []
-            # Collapse lineages to new threshold size
-            lc = LineageCollapser(
-                dataframe=counts_by_period_df,
-                lineages_col='lineage',
-                totals_col='seq_count',
-                min_level=1,
-                collapsed_col='collapsed_alias',
-                pango_aliases=pango_dict
+            lineage_list = collapse_and_recalculate_lineage_groups(
+                threshold,
+                percent_threshold,
+                counts_by_period_df,
+                pango_dict,
+                periods_to_protect
                 )
-            lc.collapse_based_on_threshold(threshold=threshold)
-            # Recalculate % prevalences in each time period with new collapsed groups
-            collapsed_period_df = pd.DataFrame(lc.collapsed)[['reporting_period','collapsed_alias', 'seq_count']]
-            counts_by_period_df = collapsed_period_df.groupby(['reporting_period','collapsed_alias']).sum(numeric_only=True).reset_index()
-            counts_by_period_df = add_percentages_column(counts_by_period_df)
-            counts_by_period_df.rename(columns={'collapsed_alias': 'lineage'}, inplace=True)
-            for period in periods_to_protect:
-                collapsed_list += get_lineages_above_threshold(counts_by_period_df, period, percent_threshold, "lineage")
-            lineage_list = list(set(collapsed_list))
     # If more than max_lineages >5%, collapse down until have max number
     elif len(lineage_list) > max_lineages:
         # Starting number for threshold is 1 - this will get incremented on first iteration of the while loop
@@ -305,23 +336,13 @@ def get_lineages_to_protect(
         while len(lineage_list) > max_lineages:
             # Increment threshold size of lineage group each iteration
             threshold += 1
-            collapsed_list = []
-            lc = LineageCollapser(
-                dataframe=counts_by_period_df,
-                lineages_col='lineage',
-                totals_col='seq_count',
-                min_level=1,
-                collapsed_col='collapsed_alias',
-                pango_aliases=pango_dict
+            lineage_list = collapse_and_recalculate_lineage_groups(
+                threshold,
+                percent_threshold,
+                counts_by_period_df,
+                pango_dict,
+                periods_to_protect
                 )
-            lc.collapse_based_on_threshold(threshold=threshold)
-            collapsed_period_df = pd.DataFrame(lc.collapsed)[['reporting_period','collapsed_alias', 'seq_count']]
-            counts_by_period_df = collapsed_period_df.groupby(['reporting_period','collapsed_alias']).sum(numeric_only=True).reset_index()
-            counts_by_period_df = add_percentages_column(counts_by_period_df)
-            counts_by_period_df.rename(columns={'collapsed_alias': 'lineage'}, inplace=True)
-            for period in periods_to_protect:
-                collapsed_list += get_lineages_above_threshold(counts_by_period_df, period, percent_threshold, "lineage")
-            lineage_list = list(set(collapsed_list))
     # Return lineages if max_lineage number reached without any collapsing
     else:
         lineage_list = list(set(lineage_list))
