@@ -9,6 +9,9 @@ import logging
 import glob
 import datetime
 import re
+from Bio import SeqIO
+from collections import defaultdict
+
 
 ## Data from the SARS-CoV-2 pipeline will be sent to an sFTP
 # sftpcol04.unix.phe.gov.uk port 443
@@ -148,7 +151,7 @@ def identify_ont_folders(parent_folder: str):
 
 def process_ont_results_df(ont_results_df, sample_sheet) -> pd.DataFrame:
     # specify useful columns
-    cols = ["taxon", "lineage", "scorpio_call", "version", "pangolin_version", "scorpio_version", "qc_status"]
+    cols = ["taxon", "lineage", "scorpio_call", "version", "pangolin_version", "scorpio_version", "qc_status", 'conflict', 'ambiguity_score', 'scorpio_support', 'scorpio_conflict', 'scorpio_notes', 'constellation_version', 'is_designated', 'qc_notes', 'note']
     # import the datafame skipping the 2nd row
     df = pd.read_csv(ont_results_df, usecols=cols, skiprows=[1])
     
@@ -177,17 +180,42 @@ def match_ont_csv_with_samplesheet(ont_results_filename:str, sample_sheet:str, o
     return df
 
 
+def process_ont_fasta_files(ont_consensus_fasta:str):
+    data = defaultdict(list)
+    with open(ont_consensus_fasta) as fasta:
+        for record in SeqIO.parse(fasta, "fasta"):
+            run_id = ("_").join(str(record.id).split("/")[0].split("_")[0:-1])
+            taxon = str(record.id).split("/")[0]
+            sequence = str(record.seq)
+            data["taxon"].append(taxon)
+            data["run_id"].append(run_id)
+            data["sequence"].append(sequence)
+    df = pd.DataFrame.from_dict(data)
+    return df
+
+
 def process_ont_results_folder(ont_results_folder):
-    processed_dfs = []
-    illumina_results_dfs = glob.glob(ont_results_folder + "/*report.csv")
+    processed_result_dfs = []
+    processed_fasta_dfs = []
+    
+    ont_results_dfs = glob.glob(ont_results_folder + "/*report.csv")
+    ont_consensus_fastas = glob.glob(ont_results_folder + "/*consensus.fasta")
     sample_sheet = glob.glob(ont_results_folder + "/*samplesheet.csv")[0]
-    #print(sample_sheet)
-    for x, file in enumerate(illumina_results_dfs):
+    
+    for x, file in enumerate(ont_results_dfs):
         df = process_ont_results_df(ont_results_df=file,
                                     sample_sheet=sample_sheet)
-        processed_dfs.append(df)
-    df = pd.concat(processed_dfs)
-    return df
+        processed_result_dfs.append(df)
+        
+    for x, file in enumerate(ont_consensus_fastas):
+        df = process_ont_fasta_files(ont_consensus_fasta=file)
+        processed_fasta_dfs.append(df)
+        
+    df_ont_results = pd.concat(processed_result_dfs)
+    df_ont_fastas = pd.concat(processed_fasta_dfs)
+    
+    df_merge = df_ont_results.merge(df_ont_fastas, on="taxon")
+    return df_merge
     
 
 def remove_ont_controls(df: pd.DataFrame) -> pd.DataFrame:
@@ -221,7 +249,7 @@ def return_date_from_illumina_folder(folder_name: str) -> val:
 
 
 def process_illumina_results_df(illumina_results_df, date) -> pd.DataFrame:
-    cols = ["taxon", "lineage", "scorpio_call", "version", "pangolin_version", "scorpio_version", "qc_status"]
+    cols = ["taxon", "lineage", "scorpio_call", "version", "pangolin_version", "scorpio_version", "qc_status", 'conflict', 'ambiguity_score', 'scorpio_support', 'scorpio_conflict', 'scorpio_notes', 'constellation_version', 'is_designated', 'qc_notes', 'note']
     df = pd.read_csv(illumina_results_df, usecols=cols)
     df = df.assign(collection_date=date)
 
@@ -241,15 +269,41 @@ def process_illumina_results_df(illumina_results_df, date) -> pd.DataFrame:
     return df
 
 
+def process_illumina_fasta_files(consensus_fasta: str, parent_folder: str) -> pd.DataFrame:
+    data = defaultdict(list)
+    with open(consensus_fasta) as fasta:
+        for record in SeqIO.parse(fasta, "fasta"):
+            run_id = parent_folder.split("/")[-2]
+            taxon = str(record.id)
+            sequence = str(record.seq)
+            data["taxon"].append(taxon)
+            data["run_id"].append(run_id)
+            data["sequence"].append(sequence)
+    df = pd.DataFrame.from_dict(data)
+    return df
+    
+    
 def process_illumina_results_folder(illumina_results_folder):
     date = return_date_from_illumina_folder(folder_name=illumina_results_folder)
-    processed_dfs = []
+    processed_results_dfs = []
+    processed_fasta_dfs = []
+    
     illumina_results_dfs = glob.glob(illumina_results_folder + "/*.csv")
+    illumina_fasta_files = glob.glob(illumina_results_folder + "/*w_ins.fas")
+    
     for x, file in enumerate(illumina_results_dfs):
         df = process_illumina_results_df(illumina_results_df=file,
                                         date=date)
-        processed_dfs.append(df)
-    df = pd.concat(processed_dfs)
+        processed_results_dfs.append(df)
+
+    for x, file in enumerate(illumina_fasta_files):
+        df = process_illumina_fasta_files(consensus_fasta=file,
+                                        parent_folder=illumina_results_folder)
+        processed_fasta_dfs.append(df)
+        
+    df_results = pd.concat(processed_results_dfs)
+    df_fasta = pd.concat(processed_fasta_dfs)
+    df = df_results.merge(df_fasta, on="taxon")
     return df
     
 
@@ -307,6 +361,31 @@ def concat_fasta(local_dir: str, date:str):
     output_fas.close()
 
 
+def write_to_json(df_metadata=pd.DataFrame):
+    print(df_metadata.columns)
+    df_sample_metadata = df_metadata[["molis_id", "collection_date"]]
+    df_run_metadata = []
+    df_sequence_data = []
+    df_pangolin_report = df_metadata[[
+        "lineage", 
+        "conflict", 
+        "ambiguity_score", 
+        "scorpio_call", 
+        "scorpio_support", 
+        "scorpio_conflict", 
+        "scorpio_notes",
+        "version",
+        "pangolin_version",
+        "scorpio_version",
+        "constellation_version",
+        "is_designated",
+        "qc_status",
+        "qc_notes",
+        "note"
+        ]]
+    df_database_action = []
+    df_pangolin_report.to_json('temp.json', orient='records', lines=True)
+
 
 ## run process        
         
@@ -315,19 +394,19 @@ def main():
     cmds = cli()     
     
     # initiate connection to remote server and download of files. 
-    #connection = sFTP(
-    #    username=cmds.username,
-    #    password=cmds.password,
-    #    outdir=cmds.outdir
-    #)
-    #connection.get_sFTP_data_fa()
-    #connection.get_sFTP_data(pattern='*.csv')
-    #connection.get_sFTP_data(pattern='*.fa*')
+    # connection = sFTP(
+    #     username=cmds.username,
+    #     password=cmds.password,
+    #     outdir=cmds.outdir
+    # )
+    # connection.get_sFTP_data(pattern='*.csv')
+    # connection.get_sFTP_data(pattern='*.fa*')
     
     df = process_results(local_dir=cmds.outdir)
     date = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     df.to_csv(f"{cmds.outdir}/{date}_covid_ll.csv")
-    
+    # df = pd.read_csv("/home/phe.gov.uk/michael.d.brown/PycharmProjects/gpha-climb-sars-cov2-lineage-line-list/results/20260507_101305_covid_ll.csv")
+    write_to_json(df)
     #concat_fasta(local_dir=cmds.outdir, date=date)
     
 if __name__ == "__main__":
