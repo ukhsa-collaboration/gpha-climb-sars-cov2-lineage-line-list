@@ -59,7 +59,7 @@ def collapser(test_data, pango_dict):
         dataframe=test_data,
         lineages_col="lineage",
         totals_col="count",
-        min_level=2,
+        min_level=1,
         collapsed_col="collapsed",
         pango_aliases=pango_dict,
     )
