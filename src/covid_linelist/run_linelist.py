@@ -170,8 +170,7 @@ def main():
         already_protected=lineages_to_protect_list
         )
     ## Lineage collapsing after identifying lineages to protect
-    # TODO: Add to own function and set threshold to n+1 number rows in df/
-    # change which df use for the collapsing bit.
+    # TODO: Add to own function
     # Collapse down any lineages not in lineages_to_protect_list
     lc = LineageCollapser(dataframe=counts_by_reporting_period_df,
                           lineages_col='lineage',
