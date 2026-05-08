@@ -54,17 +54,18 @@ def test_data():
 
 
 @pytest.fixture
-def collapser(test_data):
+def collapser(test_data, pango_dict):
     return LineageCollapser(
         dataframe=test_data,
         lineages_col="lineage",
         totals_col="count",
         min_level=2,
         collapsed_col="collapsed",
+        pango_aliases=pango_dict,
     )
 
 
-def test_protect_recombinant(test_data):
+def test_protect_recombinant(test_data, pango_dict):
     # if we protect XEC.2, it should remain when count is low
     protected = ["XEC.2"]
     lc = LineageCollapser(
@@ -72,6 +73,7 @@ def test_protect_recombinant(test_data):
         lineages_col="lineage",
         totals_col="count",
         protect_lineages=protected,
+        pango_aliases=pango_dict,
     )
 
     result = lc.collapse_based_on_threshold(threshold=5)
