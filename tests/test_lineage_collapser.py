@@ -1,5 +1,5 @@
-import pytest
 import pandas as pd
+import pytest
 from lineage_prevalence_CLIMB4 import LineageCollapser
 
 
