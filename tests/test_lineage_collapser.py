@@ -60,7 +60,7 @@ def collapser(test_data, pango_dict):
         lineages_col="lineage",
         totals_col="count",
         min_level=1,
-        collapsed_col="collapsed",
+        collapsed_col="collapsed_alias",
         pango_aliases=pango_dict,
     )
 
@@ -77,7 +77,8 @@ def test_protect_recombinant(test_data, pango_dict):
     )
 
     result = lc.collapse_based_on_threshold(threshold=5)
-    assert "XEC.2" in result["collapsed"].values
+
+    assert "XEC.2" in result["collapsed_alias"].values
 
 
 def test_recombinant_collapse(collapser):
@@ -90,58 +91,57 @@ def test_recombinant_collapse(collapser):
 
     result = collapser.collapse_based_on_threshold(threshold=5)
     # XEC.2 should be collapsed to XEC
-    assert "XEC.2" not in result["collapsed"].values
+    assert "XEC.2" not in result["collapsed_alias"].values
     # XEC.2.1.7.15 should be collapsed to XEC
-    assert "XEC.2.1.7.15" not in result["collapsed"].values
+    assert "XEC.2.1.7.15" not in result["collapsed_alias"].values
     # XEC.1.1.1 should be collapsed to XEC
-    assert "XEC.1.1.1" not in result["collapsed"].values
+    assert "XEC.1.1.1" not in result["collapsed_alias"].values
     # XEC.1 should stay
-    assert "XEC.1" in result["collapsed"].values
+    assert "XEC.1" in result["collapsed_alias"].values
     # Base XEC should also stay
-    assert "XEC" in result["collapsed"].values
+    assert "XEC" in result["collapsed_alias"].values
 
 
 def test_percentage_with_recombinants(collapser):
     # total count is 90, so 5% is 4.5
     result = collapser.collapse_based_on_pct(records_pct=5)
-
     # XEC.2 should be collapsed to XEC
-    assert "XEC.2" not in result["collapsed"].values
+    assert "XEC.2" not in result["collapsed_alias"].values
     # XEC.2.1.7.15 should be collapsed to XEC
-    assert "XEC.2.1.7.15" not in result["collapsed"].values
+    assert "XEC.2.1.7.15" not in result["collapsed_alias"].values
     # XEC.1.1.1 should be collapsed to XEC.1
-    assert "XEC.1.1.1" not in result["collapsed"].values
+    assert "XEC.1.1.1" not in result["collapsed_alias"].values
     # XEC.1 should stay
-    assert "XEC.1" in result["collapsed"].values
+    assert "XEC.1" in result["collapsed_alias"].values
     # XEC should stay
-    assert "XEC" in result["collapsed"].values
+    assert "XEC" in result["collapsed_alias"].values
 
 
 def test_standard_lineages_collapse(collapser):
     result = collapser.collapse_based_on_threshold(threshold=5)
 
     # B.1.1 should stay
-    assert "B.1.1" in result["collapsed"].values
+    assert "B.1.1" in result["collapsed_alias"].values
     # B.1.1.7 should stay
-    assert "B.1.1.7" in result["collapsed"].values
+    assert "B.1.1.7" in result["collapsed_alias"].values
     # B.1.1.7.1 should collapse into B.1.1.7
-    assert "B.1.1.7.1" not in result["collapsed"].values
+    assert "B.1.1.7.1" not in result["collapsed_alias"].values
     # B.2 should stay
-    assert "B.2" in result["collapsed"].values
+    assert "B.2" in result["collapsed_alias"].values
     # B.2.1 should collapse into B.2
-    assert "B.2.1" not in result["collapsed"].values
+    assert "B.2.1" not in result["collapsed_alias"].values
 
 
 def test_standard_percentage_collapse(collapser):
     result = collapser.collapse_based_on_pct(records_pct=5)
 
     # B.1.1 should stay
-    assert "B.1.1" in result["collapsed"].values
+    assert "B.1.1" in result["collapsed_alias"].values
     # B.1.1.7 should stay
-    assert "B.1.1.7" in result["collapsed"].values
+    assert "B.1.1.7" in result["collapsed_alias"].values
     # B.1.7.1 should collapse into B.1.1.7
-    assert "B.1.1.7.1" not in result["collapsed"].values
+    assert "B.1.1.7.1" not in result["collapsed_alias"].values
     # B.2 should stay
-    assert "B.2" in result["collapsed"].values
+    assert "B.2" in result["collapsed_alias"].values
     # B.2.1 should collapse into B.2
-    assert "B.2.1" not in result["collapsed"].values
+    assert "B.2.1" not in result["collapsed_alias"].values
