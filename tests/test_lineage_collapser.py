@@ -8,6 +8,19 @@ from covid_linelist.lineage_collapser import LineageCollapser
 
 
 @pytest.fixture
+def pango_dict():
+    pango_url = "https://raw.githubusercontent.com/cov-lineages/pango-designation/master/pango_designation/alias_key.json"
+    do_filter = True
+    with requests.get(pango_url) as url:
+        pango_aliases_dict = json.loads(url.text)
+        if do_filter:
+            pango_aliases_dict = dict(
+                [t for t in pango_aliases_dict.items() if not t[0].startswith('X') and t[0] not in ['A', 'B']])
+            return pango_aliases_dict
+        else:
+            return pango_aliases_dict
+
+@pytest.fixture
 def test_data():
     return pd.DataFrame(
         {
