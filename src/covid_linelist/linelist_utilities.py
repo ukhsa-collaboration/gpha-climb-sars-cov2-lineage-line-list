@@ -326,6 +326,7 @@ def get_lineages_to_protect(
         while len(lineage_list) < min_lineages:
             # Increment threshold size of lineage group each iteration
             threshold += 1
+<<<<<<< HEAD
             lineage_list = collapse_and_recalculate_lineage_groups(
                 threshold,
                 percent_threshold,
@@ -333,6 +334,17 @@ def get_lineages_to_protect(
                 pango_dict,
                 periods_to_protect,
                 lineage_collapse_limits
+=======
+            collapsed_list = []
+            # Collapse lineages to new threshold size
+            lc = LineageCollapser(
+                dataframe=counts_by_period_df,
+                lineages_col='lineage',
+                totals_col='seq_count',
+                min_level=1,
+                collapsed_col='collapsed_alias',
+                pango_aliases=pango_dict
+>>>>>>> 6462b3a2514734d5aa83c318441806d16e8de5b4
                 )
     # If more than max_lineages >5%, collapse down until have max number
     elif len(lineage_list) > max_lineages:
@@ -344,6 +356,7 @@ def get_lineages_to_protect(
         while len(lineage_list) > max_lineages:
             # Increment threshold size of lineage group each iteration
             threshold += 1
+<<<<<<< HEAD
             lineage_list = collapse_and_recalculate_lineage_groups(
                 threshold,
                 percent_threshold,
@@ -351,6 +364,16 @@ def get_lineages_to_protect(
                 pango_dict,
                 periods_to_protect,
                 lineage_collapse_limits
+=======
+            collapsed_list = []
+            lc = LineageCollapser(
+                dataframe=counts_by_period_df,
+                lineages_col='lineage',
+                totals_col='seq_count',
+                min_level=1,
+                collapsed_col='collapsed_alias',
+                pango_aliases=pango_dict
+>>>>>>> 6462b3a2514734d5aa83c318441806d16e8de5b4
                 )
     # Return lineages if max_lineage number reached without any collapsing
     else:
