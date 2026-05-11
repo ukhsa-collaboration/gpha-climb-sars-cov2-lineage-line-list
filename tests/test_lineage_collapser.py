@@ -1,6 +1,10 @@
+import json
+
 import pandas as pd
 import pytest
-from lineage_prevalence_CLIMB4 import LineageCollapser
+import requests
+
+from covid_linelist.lineage_collapser import LineageCollapser
 
 
 @pytest.fixture
