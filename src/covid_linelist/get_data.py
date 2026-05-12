@@ -11,6 +11,7 @@ import datetime
 import re
 from Bio import SeqIO
 from collections import defaultdict
+import json
 
 
 ## Data from the SARS-CoV-2 pipeline will be sent to an sFTP
@@ -189,7 +190,8 @@ def process_ont_fasta_files(ont_consensus_fasta:str):
             sequence = str(record.seq)
             data["taxon"].append(taxon)
             data["run_id"].append(run_id)
-            data["sequence"].append(sequence)
+            data["fasta_header"].append(str(record.id))
+            data["fasta_sequence"].append(sequence)
     df = pd.DataFrame.from_dict(data)
     return df
 
@@ -278,7 +280,8 @@ def process_illumina_fasta_files(consensus_fasta: str, parent_folder: str) -> pd
             sequence = str(record.seq)
             data["taxon"].append(taxon)
             data["run_id"].append(run_id)
-            data["sequence"].append(sequence)
+            data["fasta_header"].append(taxon)
+            data["fasta_sequence"].append(sequence)
     df = pd.DataFrame.from_dict(data)
     return df
     
@@ -330,8 +333,6 @@ def process_results(local_dir: str) -> pd.DataFrame:
     df_results = pd.concat([df_illumina, df_ont], ignore_index=True)
     df_results = df_results.reindex(columns=[*df_results.columns.tolist(), 'Specimen_Number', 'cdr_specimen_request_sk', 'cdr_opie_id'])
     df_results["molis_id"] = df_results["molis_id"].str[0:10]
-    # reorder columns
-    # ...
     return df_results
 
 
@@ -361,30 +362,53 @@ def concat_fasta(local_dir: str, date:str):
     output_fas.close()
 
 
-def write_to_json(df_metadata=pd.DataFrame):
-    print(df_metadata.columns)
-    df_sample_metadata = df_metadata[["molis_id", "collection_date"]]
-    df_run_metadata = []
-    df_sequence_data = []
-    df_pangolin_report = df_metadata[[
-        "lineage", 
-        "conflict", 
-        "ambiguity_score", 
-        "scorpio_call", 
-        "scorpio_support", 
-        "scorpio_conflict", 
-        "scorpio_notes",
-        "version",
-        "pangolin_version",
-        "scorpio_version",
-        "constellation_version",
-        "is_designated",
-        "qc_status",
-        "qc_notes",
-        "note"
-        ]]
-    df_database_action = []
-    df_pangolin_report.to_json('temp.json', orient='records', lines=True)
+def create_nested_structure(row):
+    return {
+        'sample_metadata': {
+            'molis_id': row['molis_id'], 
+            'collection_date': row['collection_date']
+            },
+        "run_metadata": {
+            "run_id": row["run_id"]
+            },
+        "sequence_data": {
+            "fasta_header": row["fasta_header"],
+            "fasta_sequence": row["fasta_sequence"]
+            },
+        "pangolin_report": {
+            "lineage": row["lineage"],
+            "conflict": row["conflict"], 
+            "ambiguity_score": row["ambiguity_score"],
+            "scorpio_call": row["scorpio_call"],
+            "scorpio_support": row["scorpio_support"],
+            "scorpio_conflict": row["scorpio_conflict"],
+            "scorpio_notes": row["scorpio_notes"],
+            "version": row["version"],
+            "pangolin_version": row["pangolin_version"],
+            "scorpio_version": row["scorpio_version"],
+            "constellation_version": row["constellation_version"],
+            "is_designated": row["is_designated"],
+            "qc_status": row["qc_status"],
+            "qc_notes": row["qc_notes"],
+            "note": row["note"]
+        },
+        "database_action": {
+            "upsert": row["upsert"], 
+            "suppress": row["suppress"], 
+            "remove": row["remove"]
+            }
+        }
+    
+    
+def write_to_json(df_metadata=pd.DataFrame, date=datetime.datetime):
+    action_columns = {'upsert': '1', 'suppress': '0', 'remove': '0'}
+    df_metadata = df_metadata.assign(**action_columns)
+    # Apply the custom function to each row of the DataFrame
+    json_data = df_metadata.apply(create_nested_structure, axis=1).tolist()
+    # Convert list of dictionaries to JSON
+    json_output = json.dumps(json_data, indent=4)
+    with open(f'{date}_covid_ll_for_ingest.json', 'w') as f:
+        json.dump(json_data, f)
 
 
 ## run process        
@@ -406,7 +430,7 @@ def main():
     date = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     df.to_csv(f"{cmds.outdir}/{date}_covid_ll.csv")
     # df = pd.read_csv("/home/phe.gov.uk/michael.d.brown/PycharmProjects/gpha-climb-sars-cov2-lineage-line-list/results/20260507_101305_covid_ll.csv")
-    write_to_json(df)
+    write_to_json(df, date)
     #concat_fasta(local_dir=cmds.outdir, date=date)
     
 if __name__ == "__main__":
