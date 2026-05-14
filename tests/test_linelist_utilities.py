@@ -3,6 +3,8 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+import requests
+import json
 
 from covid_linelist import linelist_utilities as ull
 
@@ -23,6 +25,38 @@ def test_lineage_df():
     )
     return lineage_df
 
+@pytest.fixture
+def counts_df_one():
+    counts_df = pd.read_csv("tests/test_data/totals_df.csv")
+    return counts_df
+
+@pytest.fixture
+def expected_list_one():
+    lineage_list = ["RE.1.1", "XBB.1.5", "XDV.1"]
+    return lineage_list
+
+@pytest.fixture
+def counts_df_two():
+    counts_df = pd.read_csv("tests/test_data/totals_df_v2.csv")
+    return counts_df
+
+@pytest.fixture
+def expected_list_two():
+    lineage_list = ["RE.1.1", "RF.1", "RT.1", "XBB.1", "XDV.1",  "XFN"]
+    return lineage_list
+
+@pytest.fixture
+def pango_dict():
+    pango_url = "https://raw.githubusercontent.com/cov-lineages/pango-designation/master/pango_designation/alias_key.json"
+    do_filter = True
+    with requests.get(pango_url) as url:
+        pango_aliases_dict = json.loads(url.text)
+        if do_filter:
+            pango_aliases_dict = dict(
+                [t for t in pango_aliases_dict.items() if not t[0].startswith('X') and t[0] not in ['A', 'B']])
+            return pango_aliases_dict
+        else:
+            return pango_aliases_dict
 
 def test_add_reporting_period_column(test_lineage_df):
     """
@@ -117,3 +151,22 @@ def test_add_percentages_column():
 
     df = ull.add_percentages_column(counts_by_period)
     assert pd.Series.equals(df["pct_of_reporting_period"], df["expected_pct"])
+
+@pytest.mark.parametrize(
+    "counts_df, pango_aliases, expected_list",
+    [
+        ("counts_df_one", "pango_dict", "expected_list_one"),
+        ("counts_df_two", "pango_dict", "expected_list_two")
+    ],
+)
+def test_get_top_lineages_in_full_window(counts_df, pango_aliases, expected_list, request):
+    counts_df = request.getfixturevalue(counts_df)
+    pango_aliases = request.getfixturevalue(pango_aliases)
+    expected_list = request.getfixturevalue(expected_list)
+
+    already_protected = ["BA.3.2", "BA.3.2.2", "RE.1.1.2", "LF.1", "XFG.1"]
+    collapse_limit = ["BA.2.86", "BA.2", "BA.3", "JN.1"]
+    lineage_list = ull.get_top_lineages_in_full_window(counts_df, already_protected, collapse_limit, pango_aliases, 6)
+    print(lineage_list)
+
+    assert lineage_list == expected_list
