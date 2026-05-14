@@ -358,6 +358,28 @@ def get_lineages_to_protect(
     logging.info("%s lineages identified to protect: %s", len(lineage_list), lineage_list)
     return lineage_list
 
+def get_lineage_counts_for_full_window(
+        counts_by_period_df: pd.DataFrame,
+        end_date:str,
+        weeks_to_exclude: int
+        ) -> pd.DataFrame:
+    """Get total counts for lineages in the full reporting period
+    Arguments:
+        counts_by_period_df -- Dataframe containing counts by period
+        end_date -- End date of reporting timeframe
+        weeks_to_exclude -- Number of weeks to exclude from full reporting period. Corresponds
+                            to the weeks used in recent reporting period calculations
+    Returns:
+        totals_df -- Dataframe with lineage totals for the full reporting period
+    """
+    # Filter out last x weeks
+    date_x_weeks_ago = (end_date - dt.timedelta(weeks=weeks_to_exclude)).strftime("%Y-%m-%d")
+    counts_by_period_df = counts_by_period_df[counts_by_period_df['reporting_period'] <= date_x_weeks_ago]
+    # Drop the percentage prevalence column
+    counts_by_period_df = counts_by_period_df[['lineage', 'seq_count']]
+    # Calculate lineage totals for full period
+    totals_df = counts_by_period_df.groupby('lineage').sum(numeric_only=True).reset_index()
+    return totals_df
 
 def get_top_lineages_in_full_window(
     counts_by_period_df: pd.DataFrame,
