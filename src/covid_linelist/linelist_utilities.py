@@ -382,57 +382,74 @@ def get_lineage_counts_for_full_window(
     return totals_df
 
 def get_top_lineages_in_full_window(
-    counts_by_period_df: pd.DataFrame,
-    end_date:str,
-    weeks_to_exclude: int,
-    additional_lineages: int,
-    already_protected: list
+    total_counts_df: pd.DataFrame,
+    already_protected: list[str],
+    lineage_collapse_limits: list[str],
+    pango_aliases: dict,
+    additional_lineages: int
     ) -> list[str]:
-    """Takes counts for reporting periods over the last year and aggregates
-    them to return the top lineages by prevalence in the full reporting window,
-    excluding the most recent x weeks.
+    """Takes lineage counts for full reporting period and collapses lineages to minimum
+    group size specified. If number of lineage groups is greater than total additional
+    lineages requested, iterative rounds of collapsing occur until desired number of
+    lineages is reached.
     Arguments:
-        counts_by_period_df -- Dataframe of per reporting period counts of lineages
-        end_date -- End of the full reporting period
-        weeks_to_exclude -- Number of weeks to exclude from calculations.
-                            Calculated as end_date - weeks_to_exclude
-        additional_lineages -- Number of additional lineages to return,
-                               equivalent to top x lineages by prevalence.
+        total_counts_df -- Dataframe of lineage counts for full reporting period
         already_protected -- List of lineages already protected due to prevalence
                              in recent reporting window
+        lineage_collapse_limits -- List of lineages that prevent collapsing all the way
+                           back to root and instead limit to variants e.g. BA.
+        pango_alias -- Dict containing pango aliases
+        additional_lineages -- Number of additional lineages to return
     Returns:
         to_protect_list -- List of lineages to protect based on prevalence
                            across full reporting period.
     """
-    # Filter out last x weeks
-    date_x_weeks_ago = (end_date - dt.timedelta(weeks=weeks_to_exclude)).strftime("%Y-%m-%d")
-    counts_by_period_df = counts_by_period_df[counts_by_period_df['reporting_period'] <= date_x_weeks_ago]
-    logging.info(
-        """Dataframe filtered to remove most recent %s weeks of data. Identifying
-           the %s most prevalent lineages in this period to retain""",
-        weeks_to_exclude,
-        additional_lineages,
-        )
-    # Drop the percentage prevalence column
-    counts_by_period_df = counts_by_period_df[['lineage', 'seq_count']]
-    # Calculate lineage totals for full period
-    totals_df = counts_by_period_df.groupby('lineage').sum(numeric_only=True).reset_index()
-    period_total = totals_df["seq_count"].sum()
-    # Add percentages column
-    totals_df["pct_of_reporting_period"] = (totals_df["seq_count"] / period_total).mul(100)
-    # Filter out lineages already protected
-    totals_df = totals_df[~ totals_df['lineage'].isin(already_protected)]
-    # Return additional lineages to protect by selecting top x in df
-    to_protect_list = (totals_df
-                       .nlargest(additional_lineages,
-                                 columns="pct_of_reporting_period")
-                       ['lineage']
-                       .to_list()
+    # Collapse lineages to starting threshold
+    start_threshold = 10
+    lc = LineageCollapser(
+        dataframe=total_counts_df,
+        lineages_col='lineage',
+        totals_col='seq_count',
+        min_level=1,
+        collapsed_col='collapsed_alias',
+        pango_aliases=pango_aliases,
+        protect_lineages= already_protected + lineage_collapse_limits
     )
-    logging.info("Identifed %s additional lineages to protect: %s",
-                 len(to_protect_list),
-                 to_protect_list)
-    return to_protect_list
+    lc.collapse_based_on_threshold(threshold=start_threshold)
+    # Subset columns from collapsed lineage dataframe
+    collapsed_df = pd.DataFrame(lc.collapsed)[['collapsed_alias', 'seq_count']]
+    # Get sample counts for collapsed groups
+    collapsed_counts_df = collapsed_df.groupby(['collapsed_alias']).sum(numeric_only=True).reset_index()
+    # Get list of lineages meeting criteria: Not in 6 week protection list & sequence counts > 10
+    lineage_list = collapsed_counts_df[
+        (~ collapsed_counts_df['collapsed_alias'].isin(already_protected)) &
+        (collapsed_counts_df['seq_count'] >= start_threshold)
+        ]['collapsed_alias'].to_list()
+    # If number of lineage groups in list is > number additional lineages allowed, do further collapsing
+    while len(lineage_list) > additional_lineages:
+        # Increment threshold by 1
+        start_threshold += 1
+        # Collapse lineages to new threshold
+        lc = LineageCollapser(
+            dataframe=total_counts_df,
+            lineages_col='lineage',
+            totals_col='seq_count',
+            min_level=1,
+            collapsed_col='collapsed_alias',
+            pango_aliases=pango_aliases,
+            protect_lineages= already_protected + lineage_collapse_limits
+        )
+        lc.collapse_based_on_threshold(threshold=start_threshold)
+        # Subset columns and get sample counts for lineage groups at new threshold
+        collapsed_df = pd.DataFrame(lc.collapsed)[['collapsed_alias', 'seq_count']]
+        collapsed_counts_df = collapsed_df.groupby(['collapsed_alias']).sum(numeric_only=True).reset_index()
+        #  Get list of lineages meeting criteria: Not in 6 week protection list & sequence counts > threshold group size
+        lineage_list = collapsed_counts_df[
+            (~ collapsed_counts_df['collapsed_alias'].isin(already_protected)) &
+            (collapsed_counts_df['seq_count'] >= start_threshold)
+            ]['collapsed_alias'].to_list()
+    logging.info("Protecting additional lineages: %s", lineage_list)
+    return lineage_list
 
 def mask_less_prevalent_values(
     counts_df: pd.DataFrame, lineages_to_leave_unmasked: dict, mask_value='Other'
