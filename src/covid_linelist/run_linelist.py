@@ -123,7 +123,7 @@ def main():
         filter_end_date=range_end,
         previous_weeks_to_include=timeframe_full
     )
-    # Add column to df with reporting periods 
+    # Add column to df with reporting periods
     lineage_df = llu.add_reporting_period_column(
         lineage_df=lineage_df,
         end_date=range_end,
@@ -162,12 +162,14 @@ def main():
     # +1 to account for Unassigned as don't want this including in the additional lineages here
     num_additional_lineages = max_lineages_full - len(lineages_to_protect_list) + 1
     # Get lineages to protect for full reporting period, excluding recent reporting period
+    total_df = llu.get_lineage_counts_for_full_window(counts_by_reporting_period_df, range_end, timeframe_recent)
+
     lineages_to_protect_list += llu.get_top_lineages_in_full_window(
-        counts_by_period_df=counts_by_reporting_period_df,
-        end_date=range_end,
-        weeks_to_exclude=timeframe_recent,
+        total_counts_df=total_df,
+        already_protected=lineages_to_protect_list,
+        lineage_collapse_limits=collapse_limit_list,
+        pango_aliases=pango_aliases_dict,
         additional_lineages=num_additional_lineages,
-        already_protected=lineages_to_protect_list
         )
     ## Lineage collapsing after identifying lineages to protect
     # TODO: Add to own function
