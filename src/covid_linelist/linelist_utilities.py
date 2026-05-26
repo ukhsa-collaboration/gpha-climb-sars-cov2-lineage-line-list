@@ -15,7 +15,7 @@ from typing import List
 
 import pandas as pd
 import requests
-from lineage_collapser import LineageCollapser
+from .lineage_collapser import LineageCollapser
 
 
 # Functions

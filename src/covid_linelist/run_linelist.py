@@ -12,8 +12,8 @@ import logging
 import sys
 from pathlib import Path
 
-import linelist_utilities as llu
-from lineage_collapser import LineageCollapser
+from . import linelist_utilities as llu
+from .lineage_collapser import LineageCollapser
 
 
 # Arg parse setup
