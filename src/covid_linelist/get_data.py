@@ -13,6 +13,7 @@ from Bio import SeqIO
 from collections import defaultdict
 import json
 import os.path, time
+from getpass import getpass
 
 
 ## Data from the SARS-CoV-2 pipeline will be sent to an sFTP
@@ -32,14 +33,6 @@ def cli():
         type=str,
         required=True,
         help="user account username with phe as address, format = user.name@phe.gov.uk"
-    )
-    parser.add_argument(
-        "--password",
-        "-p",
-        dest="password",
-        type=str,
-        required=True,
-        help="user account password"
     )
     parser.add_argument(
         "--outdir",
@@ -452,7 +445,7 @@ def main():
     # initiate connection to remote server and download of files. 
     connection = sFTP(
         username=cmds.username,
-        password=cmds.password,
+        password=getpass(),
         outdir=cmds.outdir
     )
     connection.get_sFTP_data(pattern='*.csv')
