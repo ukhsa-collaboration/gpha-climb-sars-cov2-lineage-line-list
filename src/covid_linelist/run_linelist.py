@@ -32,12 +32,13 @@ def get_args():
         "--input", "-i", type=str, required=True, help="Input csv of pangolin results"
     )
     parser.add_argument("--output", "-o", type=str, required=True, help="Folder to save results to")
-    ## takes a YYYY-MM-DD date as a string, parsing it to a datetime.date
-    ## then converts to give the corresponding monday date from that week
-    ## if not specified, uses todays date then converts that to give the
-    ## corresponding monday of this week
+    # takes a YYYY-MM-DD date as a string, parsing it to a datetime.date
+    # then converts to give the corresponding monday date from that week
+    # if not specified, uses todays date then converts that to give the
+    # corresponding monday of this week
     parser.add_argument(
         "--reporting-date",
+        "-r",
         type=lambda x: date_to_monday_date(dt.datetime.strptime(x, "%Y-%m-%d").date()),
         default=date_to_monday_date(dt.date.today()),
         help="Optional override for run date of the report. YYYY-MM-DD"
