@@ -32,6 +32,17 @@ def get_args():
         "--input", "-i", type=str, required=True, help="Input csv of pangolin results"
     )
     parser.add_argument("--output", "-o", type=str, required=True, help="Folder to save results to")
+    # takes a YYYY-MM-DD date as a string, parsing it to a datetime.date
+    # then converts to give the corresponding monday date from that week
+    # if not specified, uses todays date then converts that to give the
+    # corresponding monday of this week
+    parser.add_argument(
+        "--reporting-date",
+        "-r",
+        type=lambda x: date_to_monday_date(dt.datetime.strptime(x, "%Y-%m-%d").date()),
+        default=date_to_monday_date(dt.date.today()),
+        help="Optional override for run date of the report. YYYY-MM-DD"
+    )
 
     return parser.parse_args()
 
@@ -52,6 +63,19 @@ def set_up_logger(log_file):
     logger.addHandler(out_handler)
 
     return logger
+
+
+# Helper functions
+def date_to_monday_date(input_date:dt.date) -> dt.date:
+    """
+    Takes in a datetime.date
+    
+    Finds the date corresponding to the Monday of the
+    same week.
+
+    Returns that date as a datetime.date
+    """
+    return input_date - dt.timedelta(days=input_date.weekday())
 
 
 # Main function
@@ -109,7 +133,8 @@ def main():
         exitcode = 1
         return exitcode
     # Get Monday of current week as end of range for any time periods calculated.
-    range_end = today_date - dt.timedelta(days=today_date.weekday())
+    # Can be overriden by --reporting-date argument
+    range_end = args.reporting_date
     # Check and fill collection date column.
     # NOTE: - fills empty dates with Monday of current week - decide if correct behaviour
     lineage_df = llu.check_and_update_collection_dates(
