@@ -101,7 +101,7 @@ def test_filter_lineage_df_to_date_cutoff(test_lineage_df):
     filtered_lineage_df = ull.filter_lineage_df_to_date_cutoff(
         lineage_df=test_lineage_df, filter_end_date=END_DATE, previous_weeks_to_include=10
     )
-    assert (l := len(filtered_lineage_df)) == 12, f"Expected 12 samples after filtering, got {l}"
+    assert (len_df := len(filtered_lineage_df)) == 12, f"Expected 12 samples after filtering, got {len_df}"
 
     # The function rolls back to Monday before finding the date to filter to the provided number of weeks previous. When
     # providing a non-Monday date in the same week, should get the same return
