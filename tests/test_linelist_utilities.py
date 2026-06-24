@@ -1,10 +1,10 @@
+import json
 from datetime import date
 from pathlib import Path
 
 import pandas as pd
 import pytest
 import requests
-import json
 
 from covid_linelist import linelist_utilities as ull
 
