@@ -1,28 +1,28 @@
-[project] # Update all fields in this section
+[project] 
 name = "gpha-climb-sars-cov2-lineage-line-list"
 version = "3.1.0"
-description = "Short description here"
+description = "Create Covid lineage line list."
 authors = [{name = "Mike Brown", email = "michael.d.brown@ukhsa.gov.uk"}]
-requires-python = ">=3.7.6"
-dependencies = ["pandas==1.3.4", "pyyaml", "climb-onyx-client", "python-dateutil", "requests", "pango-aliasor"]
+requires-python = ">=3.12"
+dependencies = ["pandas>=3", "pyyaml", "python-dateutil", "requests", "pango-aliasor"]
 
-[tool.setuptools.dynamic]
-version = {attr = "project_name_here.__version__"} # Add underscore separated repo name here
+[project.optional-dependencies] 
+dev = ["ruff", "pytest", "pre-commit"] 
 
-[project.optional-dependencies] # Dependencies for developers only - add more if required
-dev = ["ruff>=0.4.10,<0.5", "pytest", "pre-commit"] 
-
-[build-system] # Leave this section
+[build-system] 
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
-[project.scripts] # Update with main repo script here
-covid-ll = "src.main:main"
+[project.scripts] 
+run_linelist = "covid_linelist.run_linelist:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 
-[tool.ruff.lint] # Lint rules to follow - add or delete if required
+[tool.setuptools.package-data]
+"covid_linelist.lib" = ["*.yaml"]
+
+[tool.ruff.lint] 
 select = [
     # pycodestyle
     "E",
@@ -42,7 +42,7 @@ select = [
     "PTH",
 ]
 
-ignore = ["E501"] # Lint rules to ignore - add or remove as required
+ignore = ["E501"] 
 
 [tool.ruff]
 line-length = 100
