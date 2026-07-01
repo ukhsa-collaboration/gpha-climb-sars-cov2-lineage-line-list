@@ -72,7 +72,7 @@ class sFTP():
         host, port = self.hostname, 443
         logging.info("testing transport client")
         try:
-            transport = paramiko.Transport((hostname, port))
+            transport = paramiko.Transport((host, port))
             logging.info("successful transport client connection")
         except:
             status = "error creating transport client"
@@ -252,7 +252,7 @@ def process_ont_results(list_ont_results_folders: list) -> pd.DataFrame:
     
 ## Illumina processing
 
-def return_date_from_illumina_folder(folder_name: str) -> val:
+def return_date_from_illumina_folder(folder_name: str) -> str:
     depth = folder_name.count("/") -1
     #print(depth)
     date  = folder_name.split("/")[depth].split("_")[0]
