@@ -15,6 +15,7 @@ build-backend = "setuptools.build_meta"
 
 [project.scripts] 
 run_linelist = "covid_linelist.run_linelist:main"
+get_data_covid_linelist = "covid_linelist.get_data:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
