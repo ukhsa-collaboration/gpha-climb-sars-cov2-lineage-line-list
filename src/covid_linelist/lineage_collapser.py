@@ -1,5 +1,4 @@
 import logging
-from typing import Union
 
 import pandas as pd
 
@@ -12,13 +11,13 @@ class LineageCollapser:
     def __init__(
             self, 
             dataframe: pd.DataFrame,
-            lineages_col: Union[str, int],
-            totals_col: Union[str, int],
+            lineages_col: str | int,
+            totals_col: str | int,
             pango_aliases: dict,
             min_level: int = 2,
-            cols_to_aggregate: Union[str, list, None] = None,
-            protect_lineages: Union[list, tuple, set, pd.Series, None
-            ] = None,
+            cols_to_aggregate: str | list | None = None,
+            protect_lineages: list | tuple | set | pd.Series | None
+             = None,
             collapsed_col: str = 'collapsed_alias',
     ) -> None:
         cols_to_aggregate, protect_lineages = self.validate_inputs(collapsed_col,
@@ -199,7 +198,7 @@ class LineageCollapser:
         return sorted_swap
 
     def __get_lineages_to_collapse(
-            self, level: int, threshold: Union[int, pd.Series]
+            self, level: int, threshold: int | pd.Series
     ) -> pd.Series:
         """
         Return boolean pandas series to filter data by based on lineage level
@@ -243,7 +242,7 @@ class LineageCollapser:
         )
 
     def __collapse_lineages(
-            self, level: int, threshold: Union[int, pd.Series]
+            self, level: int, threshold: int | pd.Series
     ) -> pd.DataFrame:
         to_collapse = self.__get_lineages_to_collapse(
             level, threshold=threshold
@@ -267,7 +266,7 @@ class LineageCollapser:
         return self.collapsed
 
     def collapse_based_on_threshold(
-            self, threshold: Union[int, pd.Series], convert_back: bool = True, new_alias_col: bool = False
+            self, threshold: int | pd.Series, convert_back: bool = True, new_alias_col: bool = False
     ) -> pd.DataFrame:
         # process each level starting from highest to avoid collapsing a lower
         # level lineage that would accumulate enough sequences from higher levels:
@@ -288,7 +287,7 @@ class LineageCollapser:
         return self.collapsed
 
     def __get_thresholds_based_on_pct(
-            self, records_pct: Union[int, float]
+            self, records_pct: int | float
     ) -> pd.Series:
         if self.cols_to_aggregate:
             thresholds = (
@@ -305,7 +304,7 @@ class LineageCollapser:
         return thresholds
 
     def collapse_based_on_pct(
-            self, records_pct: Union[int, float], convert_back: bool = True
+            self, records_pct: int | float, convert_back: bool = True
     ) -> pd.DataFrame:
         self.collapsed = (
             self.data.copy()
@@ -326,8 +325,8 @@ class LineageCollapser:
         return self.collapsed
 
     def collapse_recursively_to_at_least_n(
-            self, n: int, thresholds: Union[list, tuple, set, pd.Series, None
-            ] = None, percents: bool = True
+            self, n: int, thresholds: list | tuple | set | pd.Series | None
+             = None, percents: bool = True
     ) -> tuple:
         thresholds = self.sort_or_set_thresholds(percents, thresholds)
 
@@ -369,10 +368,10 @@ class LineageCollapser:
 
     def sort_or_set_thresholds(self, percents, thresholds):
         if not thresholds:
-            if percents:
+            if percents:  # noqa SIM108
                 thresholds = list(range(5, 35, 5))
             else:
                 thresholds = list(range(1_000, 11_000, 1_000))
         else:
-            thresholds = sorted(list(thresholds))
+            thresholds = sorted(thresholds)
         return thresholds
