@@ -25,25 +25,30 @@ def test_lineage_df():
     )
     return lineage_df
 
+
 @pytest.fixture
 def counts_df_one():
     counts_df = pd.read_csv("tests/test_data/totals_df.csv")
     return counts_df
+
 
 @pytest.fixture
 def expected_list_one():
     lineage_list = ["RE.1.1", "XBB.1.5", "XDV.1"]
     return lineage_list
 
+
 @pytest.fixture
 def counts_df_two():
     counts_df = pd.read_csv("tests/test_data/totals_df_v2.csv")
     return counts_df
 
+
 @pytest.fixture
 def expected_list_two():
-    lineage_list = ["RE.1.1", "RF.1", "RT.1", "XBB.1", "XDV.1",  "XFN"]
+    lineage_list = ["RE.1.1", "RF.1", "RT.1", "XBB.1", "XDV.1", "XFN"]
     return lineage_list
+
 
 @pytest.fixture
 def pango_dict():
@@ -53,10 +58,16 @@ def pango_dict():
         pango_aliases_dict = json.loads(url.text)
         if do_filter:
             pango_aliases_dict = dict(
-                [t for t in pango_aliases_dict.items() if not t[0].startswith('X') and t[0] not in ['A', 'B']])
+                [
+                    t
+                    for t in pango_aliases_dict.items()
+                    if not t[0].startswith("X") and t[0] not in ["A", "B"]
+                ]
+            )
             return pango_aliases_dict
         else:
             return pango_aliases_dict
+
 
 def test_add_reporting_period_column(test_lineage_df):
     """
@@ -101,7 +112,9 @@ def test_filter_lineage_df_to_date_cutoff(test_lineage_df):
     filtered_lineage_df = ull.filter_lineage_df_to_date_cutoff(
         lineage_df=test_lineage_df, filter_end_date=END_DATE, previous_weeks_to_include=10
     )
-    assert (len_df := len(filtered_lineage_df)) == 12, f"Expected 12 samples after filtering, got {len_df}"
+    assert (len_df := len(filtered_lineage_df)) == 12, (
+        f"Expected 12 samples after filtering, got {len_df}"
+    )
 
     # The function rolls back to Monday before finding the date to filter to the provided number of weeks previous. When
     # providing a non-Monday date in the same week, should get the same return
@@ -152,11 +165,12 @@ def test_add_percentages_column():
     df = ull.add_percentages_column(counts_by_period)
     assert pd.Series.equals(df["pct_of_reporting_period"], df["expected_pct"])
 
+
 @pytest.mark.parametrize(
     "counts_df, pango_aliases, expected_list",
     [
         ("counts_df_one", "pango_dict", "expected_list_one"),
-        ("counts_df_two", "pango_dict", "expected_list_two")
+        ("counts_df_two", "pango_dict", "expected_list_two"),
     ],
 )
 def test_get_top_lineages_in_full_window(counts_df, pango_aliases, expected_list, request):
@@ -166,7 +180,34 @@ def test_get_top_lineages_in_full_window(counts_df, pango_aliases, expected_list
 
     already_protected = ["BA.3.2", "BA.3.2.2", "RE.1.1.2", "LF.1", "XFG.1"]
     collapse_limit = ["BA.2.86", "BA.2", "BA.3", "JN.1"]
-    lineage_list = ull.get_top_lineages_in_full_window(counts_df, already_protected, collapse_limit, pango_aliases, 6)
+    lineage_list = ull.get_top_lineages_in_full_window(
+        counts_df, already_protected, collapse_limit, pango_aliases, 6
+    )
     print(lineage_list)
 
+    assert lineage_list == expected_list
+
+
+@pytest.mark.parametrize(
+    "counts_df, expected_list",
+    [("counts_df_one", "expected_list_one"), ("counts_df_two", "expected_list_two")],
+)
+def test_get_top_lineages_in_full_window_manual_protect(
+    counts_df, expected_list, pango_dict, request
+):
+    """
+    collapse limit lineages and manual protected lineages are two lists in the config added
+    together. Can use the same test as above.
+    """
+    counts_df = request.getfixturevalue(counts_df)
+    expected_list = request.getfixturevalue(expected_list)
+
+    already_protected = ["BA.3.2", "BA.3.2.2", "RE.1.1.2", "LF.1", "XFG.1"]
+    collapse_limit = ["BA.2.86", "BA.2", "BA.3"]
+    manual_protect = ["JN.1"]
+    collapse_limit_list = collapse_limit + manual_protect
+    lineage_list = ull.get_top_lineages_in_full_window(
+        counts_df, already_protected, collapse_limit_list, pango_dict, 6
+    )
+    print(lineage_list)
     assert lineage_list == expected_list
