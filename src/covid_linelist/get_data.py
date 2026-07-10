@@ -426,14 +426,16 @@ def create_nested_structure(row):
     
     
 def write_to_json(local_dir=str, df_metadata=pd.DataFrame, date=datetime.datetime):
-    action_columns = {'upsert': '1', 'suppress': '0', 'remove': '0'}
+    action_columns = {'upsert': 1, 'suppress': 0, 'remove': 0}
     df_metadata = df_metadata.assign(**action_columns)
-    # Apply the custom function to each row of the DataFrame
+    # Apply the custom function to each row of the DataFrame
     json_data = df_metadata.apply(create_nested_structure, axis=1).tolist()
-    # Convert list of dictionaries to JSON
-    json_output = json.dumps(json_data, indent=4)
     with open(f'{local_dir}/{date}_covid_ll_for_ingest.jsonl', 'w') as f:
-        json.dump(json_data, f)
+        ## iterate through list of dictionaries
+        ## write out as jsonl
+        for record in json_data:
+            f.write(json.dumps(record))
+            f.write("\n")
 
 
 ## run process        
