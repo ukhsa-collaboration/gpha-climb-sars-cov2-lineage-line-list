@@ -432,7 +432,7 @@ def write_to_json(local_dir=str, df_metadata=pd.DataFrame, date=datetime.datetim
     json_data = df_metadata.apply(create_nested_structure, axis=1).tolist()
     # Convert list of dictionaries to JSON
     json_output = json.dumps(json_data, indent=4)
-    with open(f'{local_dir}/{date}_covid_ll_for_ingest.json', 'w') as f:
+    with open(f'{local_dir}/{date}_covid_ll_for_ingest.jsonl', 'w') as f:
         json.dump(json_data, f)
 
 
