@@ -72,7 +72,7 @@ class sFTP():
         host, port = self.hostname, 443
         logging.info("testing transport client")
         try:
-            transport = paramiko.Transport((host, port))
+            transport = paramiko.Transport((hostname, port))
             logging.info("successful transport client connection")
         except:
             status = "error creating transport client"
@@ -91,8 +91,8 @@ class sFTP():
     def get_sFTP_data(self, pattern: str):
         # return list of sub-folders within the remote data folder path
         folders = self.sftp.listdir(path=self.remote_data_folder)
-        logging.info(f"list of sub-folders found in path {self.remote_data_folder}: {", ".join(folders)}")
-        #pattern = '*.csv'
+        logging.info(f"list of sub-folders found in path {self.remote_data_folder}: {', '.join(folders)}")
+        # pattern = '*.csv'
         # iterate over sub-folders for csv files and download to a local path copy   
         for i, folder in enumerate(folders):
             # check formate is as expected, i.e. check folder name contains a digit (date)
@@ -105,7 +105,7 @@ class sFTP():
                 file_list = self.sftp.listdir(remote_folder)
                 # return list for .csv files within sub-folder
                 matched_files = [f for f in file_list if fnmatch.fnmatch(f, pattern)]
-                logging.info(f"{len(matched_files)} csv files found in {remote_folder}: {", ".join(matched_files)}")#
+                logging.info(f"{len(matched_files)} csv files found in {remote_folder}: {', '.join(matched_files)}")#
                 if len(matched_files) == 0:
                     continue
                 else:
@@ -151,9 +151,9 @@ def identify_ont_folders(parent_folder: str):
             ont_folders.append(folder)
         elif date_identifier_length != 8 and date_identifier_is_no is True:
             illumina_folders.append(folder)
-    logging.info(f"ont folders discovered: {", ".join(ont_folders)}")
-    logging.info(f"illumina folders discovered: {", ".join(illumina_folders)}")
-    print(illumina_folders)
+    logging.info(f"ont folders discovered: {', '.join(ont_folders)}")
+    logging.info(f"illumina folders discovered: {', '.join(illumina_folders)}")
+    # print(illumina_folders)
     return ont_folders, illumina_folders
 
 
@@ -252,7 +252,7 @@ def process_ont_results(list_ont_results_folders: list) -> pd.DataFrame:
     
 ## Illumina processing
 
-def return_date_from_illumina_folder(folder_name: str) -> str:
+def return_date_from_illumina_folder(folder_name: str):
     depth = folder_name.count("/") -1
     #print(depth)
     date  = folder_name.split("/")[depth].split("_")[0]
@@ -356,8 +356,11 @@ def process_results(local_dir: str) -> pd.DataFrame:
         df_ont = pd.DataFrame()
         
     df_results = pd.concat([df_illumina, df_ont], ignore_index=True)
-    df_results = df_results.reindex(columns=[*df_results.columns.tolist(), 'Specimen_Number', 'cdr_specimen_request_sk', 'cdr_opie_id'])
-    df_results["molis_id"] = df_results["molis_id"].str[0:10]
+    print(df_results)
+    df_results = df_results.reindex(columns=[*df_results.columns.tolist(), 'has_inserts', 'Specimen_Number', 'cdr_specimen_request_sk', 'cdr_opie_id'])
+    df_results["molis_id"] = df_results["molis_id"].str[0:10]#
+    df_results["ambiguity_score"] = df_results["ambiguity_score"].fillna(None)
+    df_results["has_inserts"] = 1
     return df_results
 
 
@@ -391,14 +394,15 @@ def create_nested_structure(row):
     return {
         'sample_metadata': {
             'molis_id': row['molis_id'], 
-            'collection_date': row['collection_date']
+            'received_date': row['collection_date']
             },
         "run_metadata": {
             "run_id": row["run_id"]
             },
         "sequence_data": {
             "fasta_header": row["fasta_header"],
-            "fasta_sequence": row["fasta_sequence"]
+            "fasta_sequence": row["fasta_sequence"],
+            "has_inserts": row["has_inserts"]
             },
         "pangolin_report": {
             "lineage": row["lineage"],
@@ -418,13 +422,26 @@ def create_nested_structure(row):
             "note": row["note"]
         },
         "database_action": {
-            "upsert": row["upsert"], 
-            "suppress": row["suppress"], 
-            "remove": row["remove"]
+            "upsert": int(row["upsert"]), 
+            #"suppress": int(row["suppress"]), 
+            #"remove": int(row["remove"])
             }
         }
     
     
+#def write_to_json(local_dir=str, df_metadata=pd.DataFrame, date=datetime.datetime):
+#    action_columns = {'upsert': '1', 'suppress': '0', 'remove': '0'}
+#    df_metadata = df_metadata.assign(**action_columns)
+#    # Apply the custom function to each row of the DataFrame
+#    json_data = df_metadata.apply(create_nested_structure, axis=1).tolist()
+#    # Convert list of dictionaries to JSON
+#    json_output = json.dumps(json_data, indent=4)
+#    with open(f'{local_dir}/{date}_covid_ll_for_ingest.json', 'w') as f:
+#        for entry in json_data:
+#            json.dump(entry, f)
+#            f.write('\n')
+
+
 def write_to_json(local_dir=str, df_metadata=pd.DataFrame, date=datetime.datetime):
     action_columns = {'upsert': 1, 'suppress': 0, 'remove': 0}
     df_metadata = df_metadata.assign(**action_columns)
