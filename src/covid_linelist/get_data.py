@@ -326,9 +326,17 @@ def process_ont_results(list_ont_results_folders: list) -> pd.DataFrame:
 
 
 def return_date_from_illumina_folder(folder_name: str) -> str:
+    """Checks to see if Illumnia folder is using (old) 6 digit or (new) 8 digit date. If 6 digit will update to 8 digit.
+
+    Args:
+        folder_name (str): Self explanitory
+
+    Returns:
+        str: Full 8 digit date of Illumina folder
+    """
     depth = folder_name.count("/") - 1
     date = folder_name.split("/")[depth].split("_")[0]
-    if folder_name == "/home/phe.gov.uk/michael.d.brown/gpha-climb-sars-cov2-lineage-line-list/results/20261022_SH01360_0021_ASC2193208-SC3_indexsetD/":
+    if len(date) == 8:
         date = str(date)
     else:
         date = "20" + str(date)
