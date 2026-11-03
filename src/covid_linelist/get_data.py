@@ -201,14 +201,14 @@ def return_recent_data_folders(parent_folder: str):
 
 
 def process_ont_results_df(ont_results_df: pd.DataFrame, sample_sheet: pd.DataFrame) -> pd.DataFrame:
-    """_summary_
+    """Generate a complete metadata dataframe of ONT run data within an ONT run folder
 
     Args:
-        ont_results_df (pd.DataFrame): _description_
-        sample_sheet (pd.DataFrame): _description_
+        ont_results_df (pd.DataFrame): Dataframe of the ONT result runs
+        sample_sheet (pd.DataFrame): DataFrame of the run samplesheet containing metadata
 
     Returns:
-        pd.DataFrame: _description_
+        pd.DataFrame: A merged DataFrame of ONT runs and their useful metadata
     """
     # specify useful columns
     cols = [
