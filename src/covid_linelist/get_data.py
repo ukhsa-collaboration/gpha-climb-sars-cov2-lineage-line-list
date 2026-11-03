@@ -1,7 +1,7 @@
-import pandas as pd
 import sys
-import argparse
 import os
+import pandas as pd
+import argparse
 import paramiko
 import fnmatch
 import pathlib
@@ -12,7 +12,6 @@ import re
 from Bio import SeqIO
 from collections import defaultdict
 import json
-import os.path, time
 from getpass import getpass
 from pathlib import Path
 
@@ -117,7 +116,7 @@ class sFTP:
                 else:
                     # only copy new files
                     for file_name in matched_files:
-                        if not os.path.exists(f"{local_folder}/{file_name}"):
+                        if not (Path(local_folder) / file_name).exists():
                             # download files from remote folder -> local folder
                             logging.info(f"processing: {remote_folder}/{file_name}")
                             self.sftp.get(
@@ -141,7 +140,7 @@ def identify_recent_folders(parent_folder: str):
     latest_folders = []
     # if folder modified time = run_time, i.e. recent downloaded files keep folder
     for x, folder in enumerate(sub_folders):
-        modified_time = os.path.getmtime(folder)
+        modified_time = Path(folder).stat().st_mtime
         modified_time = datetime.datetime.fromtimestamp(modified_time).strftime(
             "%Y%m%d"
         )
