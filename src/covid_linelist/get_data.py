@@ -168,7 +168,14 @@ def identify_recent_folders(parent_folder: str):
  
 
 def identify_ont_folders(run_name: str) -> bool:
-    """Check the run name conforms to the ONT format."""
+    """Check the run name conforms to the ONT format
+
+    Args:
+        run_name (str): Run folder name
+
+    Returns:
+        bool: Whether the run name begins with a date and time (ONT identifier)
+    """
     # Assume the run name begins with a date and time
     return bool(re.match(r"\d{8}_\d{4}_", run_name))
 
