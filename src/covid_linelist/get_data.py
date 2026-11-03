@@ -14,6 +14,7 @@ from collections import defaultdict
 import json
 import os.path, time
 from getpass import getpass
+from pathlib import Path
 
 ## Data from the SARS-CoV-2 pipeline will be sent to an sFTP
 # sftpcol04.unix.phe.gov.uk port 443
@@ -134,40 +135,88 @@ class sFTP:
         # Need to handle error: OSError: Not a directory
 
 
-def identify_ont_folders(parent_folder: str):
+def identify_recent_folders(parent_folder: str):
     run_time = datetime.datetime.now().strftime("%Y%m%d_%H")
     run_time = datetime.datetime.now().strftime("%Y%m%d")
     sub_folders = glob.glob(parent_folder + "/*/")
     latest_folders = []
-    # print(run_time)
     # if folder modified time = run_time, i.e. recent downloaded files keep folder
     for x, folder in enumerate(sub_folders):
         modified_time = os.path.getmtime(folder)
         modified_time = datetime.datetime.fromtimestamp(modified_time).strftime(
             "%Y%m%d"
         )
-        # print(modified_time)
         if run_time == modified_time:
             latest_folders.append(folder)
+    return latest_folders
+ 
 
+def identify_ont_folders(run_name: str) -> bool:
+    """Check the run name conforms to the ONT format."""
+    # Assume the run name begins with a date and time
+    print(re.match(r"\d{8}_\d{4}_", run_name))
+    return re.match(r"\d{8}_\d{4}_", run_name) is not None   
+
+
+def return_recent_data_folders(parent_folder: str):
     ont_folders = []
     illumina_folders = []
+    latest_folders = identify_recent_folders(parent_folder)
     for x, folder in enumerate(latest_folders):
-        date_identifier = folder.split("/")[-2]
-        # print(date_identifier)
-        date_identifier = date_identifier.split("_")[0]
-        # print(date_identifier)
-        date_identifier_length = len(date_identifier)
-        date_identifier_is_no = date_identifier.isnumeric()
-        # print(date_identifier_is_no)
-        if date_identifier_length == 8 and date_identifier_is_no is True:
+        print(folder)
+        if identify_ont_folders(folder) is True:
+            # print(folder)
             ont_folders.append(folder)
-        elif date_identifier_length != 8 and date_identifier_is_no is True:
+        else:
             illumina_folders.append(folder)
+        # date_identifier = folder.split("/")[-2]
+        # date_identifier = date_identifier.split("_")[0]
+        # date_identifier_length = len(date_identifier)
+        # date_identifier_is_no = date_identifier.isnumeric()
+        # if date_identifier_length == 8 and date_identifier_is_no is True:
+        #     ont_folders.append(folder)
+        # elif date_identifier_length != 8 and date_identifier_is_no is True:
+        #     illumina_folders.append(folder)
     logging.info(f"ont folders discovered: {', '.join(ont_folders)}")
     logging.info(f"illumina folders discovered: {', '.join(illumina_folders)}")
-    # print(illumina_folders)
     return ont_folders, illumina_folders
+
+
+# def identify_ont_folders(parent_folder: str):
+#     run_time = datetime.datetime.now().strftime("%Y%m%d_%H")
+#     run_time = datetime.datetime.now().strftime("%Y%m%d")
+#     sub_folders = glob.glob(parent_folder + "/*/")
+#     latest_folders = []
+#     # print(run_time)
+#     # if folder modified time = run_time, i.e. recent downloaded files keep folder
+#     for x, folder in enumerate(sub_folders):
+#         modified_time = os.path.getmtime(folder)
+#         modified_time = datetime.datetime.fromtimestamp(modified_time).strftime(
+#             "%Y%m%d"
+#         )
+#         # print(modified_time)
+#         if run_time == modified_time:
+#             latest_folders.append(folder)
+
+#     ont_folders = []
+#     illumina_folders = []
+#     for x, folder in enumerate(latest_folders):
+#         date_identifier = folder.split("/")[-2]
+#         # print(date_identifier)
+#         date_identifier = date_identifier.split("_")[0]
+#         # print(date_identifier)
+#         date_identifier_length = len(date_identifier)
+#         date_identifier_is_no = date_identifier.isnumeric()
+#         # print(date_identifier_is_no)
+#         if date_identifier_length == 8 and date_identifier_is_no is True:
+#             ont_folders.append(folder)
+#         elif date_identifier_length != 8 and date_identifier_is_no is True:
+#             illumina_folders.append(folder)
+#     logging.info(f"ont folders discovered: {', '.join(ont_folders)}")
+#     logging.info(f"illumina folders discovered: {', '.join(illumina_folders)}")
+#     # print(illumina_folders)
+#     illumina_folders.append("/home/phe.gov.uk/michael.d.brown/gpha-climb-sars-cov2-lineage-line-list/results/20261022_SH01360_0021_ASC2193208-SC3_indexsetD/")
+#     return ont_folders, illumina_folders
 
 
 ## ONT processing
@@ -247,9 +296,11 @@ def process_ont_fasta_files(ont_consensus_fasta: str):
 def process_ont_results_folder(ont_results_folder):
     processed_result_dfs = []
     processed_fasta_dfs = []
-
+    #print(ont_results_folder)
     ont_results_dfs = glob.glob(ont_results_folder + "/*report.csv")
     ont_consensus_fastas = glob.glob(ont_results_folder + "/*consensus.fasta")
+    #print(glob.glob(ont_results_folder + "/*samplesheet.csv"))
+
     sample_sheet = glob.glob(ont_results_folder + "/*samplesheet.csv")[0]
 
     for x, file in enumerate(ont_results_dfs):
@@ -275,9 +326,14 @@ def remove_ont_controls(df: pd.DataFrame) -> pd.DataFrame:
 
 def process_ont_results(list_ont_results_folders: list) -> pd.DataFrame:
     concat_ont_results_df = []
+    #print(list_ont_results_folders)
+    #to_be_removed = "/home/phe.gov.uk/michael.d.brown/gpha-climb-sars-cov2-lineage-line-list/results/20261022_SH01360_0021_ASC2193208-SC3_indexsetD/"
+    list_ont_results_folders.remove(to_be_removed)
+    #print(list_ont_results_folders)
     for x, folder in enumerate(list_ont_results_folders):
         df = process_ont_results_folder(ont_results_folder=folder)
         concat_ont_results_df.append(df)
+        #print(df)
     df = pd.concat(concat_ont_results_df)
     # print(df)
     df = remove_ont_controls(df)
@@ -294,7 +350,10 @@ def return_date_from_illumina_folder(folder_name: str) -> str:
     # print(depth)
     date = folder_name.split("/")[depth].split("_")[0]
     # print(folder_name)
-    date = "20" + str(date)
+    if folder_name == "/home/phe.gov.uk/michael.d.brown/gpha-climb-sars-cov2-lineage-line-list/results/20261022_SH01360_0021_ASC2193208-SC3_indexsetD/":
+        date = str(date)
+    else:
+        date = "20" + str(date)
     logging.info(f"retrieved date from {folder_name} as {date}")
     return date
 
@@ -398,7 +457,7 @@ def process_illumina_results(list_of_illumina_folders: list) -> pd.DataFrame:
 
 
 def process_results(local_dir: str) -> pd.DataFrame:
-    ont_folders, illumina_folders = identify_ont_folders(parent_folder=local_dir)
+    ont_folders, illumina_folders = return_recent_data_folders(parent_folder=local_dir)
 
     # create empty DataFrame if no sub-folders in list of folder type
     if len(illumina_folders) != 0:
@@ -412,7 +471,7 @@ def process_results(local_dir: str) -> pd.DataFrame:
         df_ont = pd.DataFrame()
 
     df_results = pd.concat([df_illumina, df_ont], ignore_index=True)
-    print(df_results)
+    # print(df_results)
     df_results = df_results.reindex(
         columns=[
             *df_results.columns.tolist(),
@@ -422,6 +481,7 @@ def process_results(local_dir: str) -> pd.DataFrame:
             "cdr_opie_id",
         ]
     )
+    # df_results.to_csv("check.csv")
     df_results["molis_id"] = df_results["molis_id"].str[0:10]  #
     df_results["ambiguity_score"] = df_results["ambiguity_score"].fillna(None)
     df_results["has_inserts"] = 1
@@ -437,16 +497,16 @@ def concat_fasta(local_dir: str, date: str):
     identifier = "positive|negative|water|control|pos|neg|ctr"
     fastas = []
     for x, folder in enumerate(sub_folders):
-        print(folder)
+        #print(folder)
         fasta_files = glob.glob("*.fa*")
         fastas.append(fasta_files)
-        print(fastas)
+        #print(fastas)
 
     output_fas = open(f"{local_dir}/{date}_covid_ll.fasta", "w")
     file_count = len(fastas)
-    print(file_count)
+    #print(file_count)
     for f in fastas:
-        print(f)
+        #print(f)
         file_count += 1
         fh = open(f)
         for line in fh:
