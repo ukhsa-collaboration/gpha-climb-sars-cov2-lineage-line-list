@@ -24,6 +24,11 @@ from pathlib import Path
 
 
 def cli():
+    """_summary_
+
+    Returns:
+        _type_: _description_
+    """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter, add_help=True
     )
@@ -53,6 +58,11 @@ def cli():
 
 
 class sFTP:
+    """_summary_
+
+    Returns:
+        _type_: _description_
+    """
     hostname = "sftpcol04.unix.phe.gov.uk"
     remote_data_folder = "/GPHA/covid_sequencing/"
 
@@ -134,6 +144,14 @@ class sFTP:
 
 
 def identify_recent_folders(parent_folder: str):
+    """_summary_
+
+    Args:
+        parent_folder (str): _description_
+
+    Returns:
+        _type_: _description_
+    """
     run_time = datetime.datetime.now().strftime("%Y%m%d_%H")
     run_time = datetime.datetime.now().strftime("%Y%m%d")
     sub_folders = glob.glob(parent_folder + "/*/")
@@ -156,6 +174,14 @@ def identify_ont_folders(run_name: str) -> bool:
 
 
 def return_recent_data_folders(parent_folder: str):
+    """Retrieve folders within the parent folder containing recent data
+
+    Args:
+        parent_folder (str): self-explanitory
+
+    Returns:
+        str: string path to ONT and Illumina folders
+    """
     ont_folders = []
     illumina_folders = []
     latest_folders = identify_recent_folders(parent_folder)
@@ -174,7 +200,16 @@ def return_recent_data_folders(parent_folder: str):
 ## ONT processing
 
 
-def process_ont_results_df(ont_results_df, sample_sheet) -> pd.DataFrame:
+def process_ont_results_df(ont_results_df: pd.DataFrame, sample_sheet: pd.DataFrame) -> pd.DataFrame:
+    """_summary_
+
+    Args:
+        ont_results_df (pd.DataFrame): _description_
+        sample_sheet (pd.DataFrame): _description_
+
+    Returns:
+        pd.DataFrame: _description_
+    """
     # specify useful columns
     cols = [
         "taxon",
@@ -204,7 +239,6 @@ def process_ont_results_df(ont_results_df, sample_sheet) -> pd.DataFrame:
         )
         # get date via string split and taking the last 8 digits
         df = df.assign(collection_date=str(df["taxon"]).split("_")[0][-8:])
-        # df = df.assign(central_sample_id=str(df["taxon"]).split("_")[3:4])
         df = df.assign(central_sample_id=df["molis_id"])  # .split("\n")[0])
         return df
 
