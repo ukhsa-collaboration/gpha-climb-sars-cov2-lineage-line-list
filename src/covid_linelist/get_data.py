@@ -24,11 +24,6 @@ from pathlib import Path
 
 
 def cli():
-    """_summary_
-
-    Returns:
-        _type_: _description_
-    """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter, add_help=True
     )
@@ -58,11 +53,6 @@ def cli():
 
 
 class sFTP:
-    """_summary_
-
-    Returns:
-        _type_: _description_
-    """
     hostname = "sftpcol04.unix.phe.gov.uk"
     remote_data_folder = "/GPHA/covid_sequencing/"
 
@@ -143,16 +133,16 @@ class sFTP:
         # Need to handle error: OSError: Not a directory
 
 
-def identify_recent_folders(parent_folder: str):
-    """_summary_
+def identify_recent_folders(parent_folder: str) -> list:
+    """Checks the last modified date of folders within the parent directory. If the modified date is the same as the current 
+    date of the pipeline being run the folder is saved to a list of latest_folders.
 
     Args:
-        parent_folder (str): _description_
+        parent_folder (str): Path to the parent directory
 
     Returns:
-        _type_: _description_
+        list: A list of recently downloaded folders (within the parent directory)
     """
-    run_time = datetime.datetime.now().strftime("%Y%m%d_%H")
     run_time = datetime.datetime.now().strftime("%Y%m%d")
     sub_folders = glob.glob(parent_folder + "/*/")
     latest_folders = []
@@ -256,6 +246,16 @@ def process_ont_results_df(ont_results_df: pd.DataFrame, sample_sheet: pd.DataFr
 def match_ont_csv_with_samplesheet(
     ont_results_filename: str, sample_sheet: str, ont_results_df: pd.DataFrame
 ) -> pd.DataFrame:
+    """Matches the ONT csv with the metadata samplesheet
+
+    Args:
+        ont_results_filename (str): ONT sequence filename
+        sample_sheet (str): ONT run samplesheet
+        ont_results_df (pd.DataFrame): ONT results DataFrame
+
+    Returns:
+        pd.DataFrame: Merged DataFrame of ONT runs with info from samplesheet 
+    """
     barcode = ont_results_filename.split("barcode")[1].split(".")[0]
     col_names = ["barcode", "molis_id"]
     df_samplesheet = pd.read_csv(
