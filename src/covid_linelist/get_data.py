@@ -154,7 +154,6 @@ def identify_recent_folders(parent_folder: str):
 def identify_ont_folders(run_name: str) -> bool:
     """Check the run name conforms to the ONT format."""
     # Assume the run name begins with a date and time
-    print(bool(re.match(r"\d{8}_\d{4}_", run_name)))
     return bool(re.match(r"\d{8}_\d{4}_", run_name))
 
 
@@ -163,10 +162,8 @@ def return_recent_data_folders(parent_folder: str):
     illumina_folders = []
     latest_folders = identify_recent_folders(parent_folder)
     for x, folder in enumerate(latest_folders):
-        folder = Path(folder).name
-        print(folder)
-        if identify_ont_folders(folder) is True:
-            # print(folder)
+        folder_name = Path(folder).name
+        if identify_ont_folders(folder_name) is True:
             ont_folders.append(folder)
         else:
             illumina_folders.append(folder)
@@ -328,8 +325,6 @@ def remove_ont_controls(df: pd.DataFrame) -> pd.DataFrame:
 def process_ont_results(list_ont_results_folders: list) -> pd.DataFrame:
     concat_ont_results_df = []
     #print(list_ont_results_folders)
-    #to_be_removed = "/home/phe.gov.uk/michael.d.brown/gpha-climb-sars-cov2-lineage-line-list/results/20261022_SH01360_0021_ASC2193208-SC3_indexsetD/"
-    list_ont_results_folders.remove(to_be_removed)
     #print(list_ont_results_folders)
     for x, folder in enumerate(list_ont_results_folders):
         df = process_ont_results_folder(ont_results_folder=folder)
@@ -462,6 +457,7 @@ def process_results(local_dir: str) -> pd.DataFrame:
 
     # create empty DataFrame if no sub-folders in list of folder type
     if len(illumina_folders) != 0:
+        print(illumina_folders)
         df_illumina = process_illumina_results(illumina_folders)
     elif len(illumina_folders) == 0:
         df_illumina = pd.DataFrame()
