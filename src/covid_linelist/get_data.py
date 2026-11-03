@@ -154,8 +154,8 @@ def identify_recent_folders(parent_folder: str):
 def identify_ont_folders(run_name: str) -> bool:
     """Check the run name conforms to the ONT format."""
     # Assume the run name begins with a date and time
-    print(re.match(r"\d{8}_\d{4}_", run_name))
-    return re.match(r"\d{8}_\d{4}_", run_name) is not None   
+    print(bool(re.match(r"\d{8}_\d{4}_", run_name)))
+    return bool(re.match(r"\d{8}_\d{4}_", run_name))
 
 
 def return_recent_data_folders(parent_folder: str):
@@ -163,6 +163,7 @@ def return_recent_data_folders(parent_folder: str):
     illumina_folders = []
     latest_folders = identify_recent_folders(parent_folder)
     for x, folder in enumerate(latest_folders):
+        folder = Path(folder).name
         print(folder)
         if identify_ont_folders(folder) is True:
             # print(folder)
