@@ -63,7 +63,6 @@ class sFTP:
         self.outdir = outdir
         self.__check_connection()
         self.sftp = self.__connect_to_sFTP()
-        # self.get_sFTP_data()
 
     def __connect_to_sFTP(self):
         host, port = self.hostname, 443
@@ -167,54 +166,10 @@ def return_recent_data_folders(parent_folder: str):
             ont_folders.append(folder)
         else:
             illumina_folders.append(folder)
-        # date_identifier = folder.split("/")[-2]
-        # date_identifier = date_identifier.split("_")[0]
-        # date_identifier_length = len(date_identifier)
-        # date_identifier_is_no = date_identifier.isnumeric()
-        # if date_identifier_length == 8 and date_identifier_is_no is True:
-        #     ont_folders.append(folder)
-        # elif date_identifier_length != 8 and date_identifier_is_no is True:
-        #     illumina_folders.append(folder)
+
     logging.info(f"ont folders discovered: {', '.join(ont_folders)}")
     logging.info(f"illumina folders discovered: {', '.join(illumina_folders)}")
     return ont_folders, illumina_folders
-
-
-# def identify_ont_folders(parent_folder: str):
-#     run_time = datetime.datetime.now().strftime("%Y%m%d_%H")
-#     run_time = datetime.datetime.now().strftime("%Y%m%d")
-#     sub_folders = glob.glob(parent_folder + "/*/")
-#     latest_folders = []
-#     # print(run_time)
-#     # if folder modified time = run_time, i.e. recent downloaded files keep folder
-#     for x, folder in enumerate(sub_folders):
-#         modified_time = os.path.getmtime(folder)
-#         modified_time = datetime.datetime.fromtimestamp(modified_time).strftime(
-#             "%Y%m%d"
-#         )
-#         # print(modified_time)
-#         if run_time == modified_time:
-#             latest_folders.append(folder)
-
-#     ont_folders = []
-#     illumina_folders = []
-#     for x, folder in enumerate(latest_folders):
-#         date_identifier = folder.split("/")[-2]
-#         # print(date_identifier)
-#         date_identifier = date_identifier.split("_")[0]
-#         # print(date_identifier)
-#         date_identifier_length = len(date_identifier)
-#         date_identifier_is_no = date_identifier.isnumeric()
-#         # print(date_identifier_is_no)
-#         if date_identifier_length == 8 and date_identifier_is_no is True:
-#             ont_folders.append(folder)
-#         elif date_identifier_length != 8 and date_identifier_is_no is True:
-#             illumina_folders.append(folder)
-#     logging.info(f"ont folders discovered: {', '.join(ont_folders)}")
-#     logging.info(f"illumina folders discovered: {', '.join(illumina_folders)}")
-#     # print(illumina_folders)
-#     illumina_folders.append("/home/phe.gov.uk/michael.d.brown/gpha-climb-sars-cov2-lineage-line-list/results/20261022_SH01360_0021_ASC2193208-SC3_indexsetD/")
-#     return ont_folders, illumina_folders
 
 
 ## ONT processing
@@ -262,17 +217,13 @@ def match_ont_csv_with_samplesheet(
     ont_results_filename: str, sample_sheet: str, ont_results_df: pd.DataFrame
 ) -> pd.DataFrame:
     barcode = ont_results_filename.split("barcode")[1].split(".")[0]
-    # print(barcode)
     col_names = ["barcode", "molis_id"]
     df_samplesheet = pd.read_csv(
         sample_sheet, names=col_names, header=None, converters={"barcode": str}
     )
-    # print(df_samplesheet)
     df = ont_results_df.copy()
     df = df.assign(barcode=str(df["taxon"]).split("barcode")[1].split(".")[0][:2])
-    # print(df.barcode)
     df = df.merge(df_samplesheet, on="barcode")
-    # print(df)
     return df
 
 
@@ -294,10 +245,8 @@ def process_ont_fasta_files(ont_consensus_fasta: str):
 def process_ont_results_folder(ont_results_folder):
     processed_result_dfs = []
     processed_fasta_dfs = []
-    #print(ont_results_folder)
     ont_results_dfs = glob.glob(ont_results_folder + "/*report.csv")
     ont_consensus_fastas = glob.glob(ont_results_folder + "/*consensus.fasta")
-    #print(glob.glob(ont_results_folder + "/*samplesheet.csv"))
 
     sample_sheet = glob.glob(ont_results_folder + "/*samplesheet.csv")[0]
 
@@ -324,17 +273,12 @@ def remove_ont_controls(df: pd.DataFrame) -> pd.DataFrame:
 
 def process_ont_results(list_ont_results_folders: list) -> pd.DataFrame:
     concat_ont_results_df = []
-    #print(list_ont_results_folders)
-    #print(list_ont_results_folders)
     for x, folder in enumerate(list_ont_results_folders):
         df = process_ont_results_folder(ont_results_folder=folder)
         concat_ont_results_df.append(df)
-        #print(df)
     df = pd.concat(concat_ont_results_df)
-    # print(df)
     df = remove_ont_controls(df)
     df = df.drop("barcode", axis=1)
-    # print(df)
     return df
 
 
@@ -343,9 +287,7 @@ def process_ont_results(list_ont_results_folders: list) -> pd.DataFrame:
 
 def return_date_from_illumina_folder(folder_name: str) -> str:
     depth = folder_name.count("/") - 1
-    # print(depth)
     date = folder_name.split("/")[depth].split("_")[0]
-    # print(folder_name)
     if folder_name == "/home/phe.gov.uk/michael.d.brown/gpha-climb-sars-cov2-lineage-line-list/results/20261022_SH01360_0021_ASC2193208-SC3_indexsetD/":
         date = str(date)
     else:
@@ -377,18 +319,14 @@ def process_illumina_results_df(illumina_results_df, date) -> pd.DataFrame:
     df = df.assign(collection_date=date)
 
     # central sample id is first part of taxon column
-    # central_sample_id = str(df["taxon"]).split("_")[1].split("-")[0]
     central_sample_id = str(df["taxon"]).split("-")[0].split(" ")[0]
     central_sample_id = df["taxon"].str.split("-", expand=True)[0]
     df = df.assign(central_sample_id=central_sample_id)
 
     # molis id is 2nd part of taxon column and is 10 digits long
-    # molis_id = str(df["taxon"]).split("_")[1][:10]
     molis_id = str(df["taxon"]).split("_")[1].split(".")[0].split("\nN")[0]
     df = df.assign(molis_id=molis_id)
     # step code is the suffix of the taxon column
-    # step_code = str(df["taxon"]).split("_")[1][10:].split("\nN")[0].strip("-")
-    # df = df.assign(step_code=step_code)
     return df
 
 
@@ -457,7 +395,6 @@ def process_results(local_dir: str) -> pd.DataFrame:
 
     # create empty DataFrame if no sub-folders in list of folder type
     if len(illumina_folders) != 0:
-        print(illumina_folders)
         df_illumina = process_illumina_results(illumina_folders)
     elif len(illumina_folders) == 0:
         df_illumina = pd.DataFrame()
@@ -468,7 +405,6 @@ def process_results(local_dir: str) -> pd.DataFrame:
         df_ont = pd.DataFrame()
 
     df_results = pd.concat([df_illumina, df_ont], ignore_index=True)
-    # print(df_results)
     df_results = df_results.reindex(
         columns=[
             *df_results.columns.tolist(),
@@ -478,7 +414,6 @@ def process_results(local_dir: str) -> pd.DataFrame:
             "cdr_opie_id",
         ]
     )
-    # df_results.to_csv("check.csv")
     df_results["molis_id"] = df_results["molis_id"].str[0:10]  #
     df_results["ambiguity_score"] = df_results["ambiguity_score"].fillna(None)
     df_results["has_inserts"] = 1
@@ -494,16 +429,12 @@ def concat_fasta(local_dir: str, date: str):
     identifier = "positive|negative|water|control|pos|neg|ctr"
     fastas = []
     for x, folder in enumerate(sub_folders):
-        #print(folder)
         fasta_files = glob.glob("*.fa*")
         fastas.append(fasta_files)
-        #print(fastas)
 
     output_fas = open(f"{local_dir}/{date}_covid_ll.fasta", "w")
     file_count = len(fastas)
-    #print(file_count)
     for f in fastas:
-        #print(f)
         file_count += 1
         fh = open(f)
         for line in fh:
@@ -549,19 +480,6 @@ def create_nested_structure(row):
     }
 
 
-# def write_to_json(local_dir=str, df_metadata=pd.DataFrame, date=datetime.datetime):
-#    action_columns = {'upsert': '1', 'suppress': '0', 'remove': '0'}
-#    df_metadata = df_metadata.assign(**action_columns)
-#    # Apply the custom function to each row of the DataFrame
-#    json_data = df_metadata.apply(create_nested_structure, axis=1).tolist()
-#    # Convert list of dictionaries to JSON
-#    json_output = json.dumps(json_data, indent=4)
-#    with open(f'{local_dir}/{date}_covid_ll_for_ingest.json', 'w') as f:
-#        for entry in json_data:
-#            json.dump(entry, f)
-#            f.write('\n')
-
-
 def write_to_json(local_dir=str, df_metadata=pd.DataFrame, date=datetime.datetime):
     action_columns = {"upsert": 1, "suppress": 0, "remove": 0}
     df_metadata = df_metadata.assign(**action_columns)
@@ -589,9 +507,7 @@ def main():
 
     df = process_results(local_dir=cmds.outdir)
     date = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    # df.to_csv(f"{cmds.outdir}/{date}_covid_ll.csv")
     write_to_json(cmds.outdir, df, date)
-    # concat_fasta(local_dir=cmds.outdir, date=date)
 
 
 if __name__ == "__main__":
