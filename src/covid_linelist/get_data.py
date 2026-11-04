@@ -424,7 +424,7 @@ def remove_illumina_controls(df: pd.DataFrame) -> pd.DataFrame:
 
 def process_illumina_results(list_of_illumina_folders: list) -> pd.DataFrame:
     concat_illumina_results_df = []
-    for x, folder in enumerate(list_of_illumina_folders):
+    for _x, folder in enumerate(list_of_illumina_folders):
         try:
             df = process_illumina_results_folder(illumina_results_folder=folder)
             concat_illumina_results_df.append(df)
@@ -471,19 +471,18 @@ def process_results(local_dir: str) -> pd.DataFrame:
 
 
 def concat_fasta(local_dir: str, date: str):
-    sub_folders = glob.glob(local_dir + "/*/")
+    sub_folders = Path(local_dir).glob("/*/")
     sub_folders = [x for x in sub_folders if not x.startswith(f"{local_dir}/test.txt")]
-    identifier = "positive|negative|water|control|pos|neg|ctr"
     fastas = []
-    for x, folder in enumerate(sub_folders):
-        fasta_files = glob.glob("*.fa*")
+    for _x, folder in enumerate(sub_folders):
+        fasta_files = Path(folder).glob("*/.fa*")
         fastas.append(fasta_files)
 
-    output_fas = open(f"{local_dir}/{date}_covid_ll.fasta", "w")
+    output_fas = open(f"{local_dir}/{date}_covid_ll.fasta", "w")  # noqa: SIM115
     file_count = len(fastas)
     for f in fastas:
         file_count += 1
-        fh = open(f)
+        fh = open(f)  # noqa: PTH123
         for line in fh:
             output_fas.write(line)
         fh.close()
