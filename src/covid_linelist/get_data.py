@@ -1,19 +1,19 @@
-import sys
-import os
-import pandas as pd
 import argparse
-import paramiko
-import fnmatch
-import pathlib
-import logging
-import glob
 import datetime
-import re
-from Bio import SeqIO
-from collections import defaultdict
+import fnmatch
+import glob
 import json
+import logging
+import pathlib
+import re
+import sys
+from collections import defaultdict
 from getpass import getpass
 from pathlib import Path
+
+import pandas as pd
+import paramiko
+from Bio import SeqIO
 
 ## Data from the SARS-CoV-2 pipeline will be sent to an sFTP
 # sftpcol04.unix.phe.gov.uk port 443
@@ -76,16 +76,16 @@ class sFTP:
         try:
             transport = paramiko.Transport((host, port))
             logging.info("successful transport client connection")
-        except:
+        except:  # noqa: E722
             status = "error creating transport client"
             logging.error(status)
 
         logging.info("testing ssh connection")
         try:
             transport.connect(None, self.username, self.password)
-            client = paramiko.SFTPClient.from_transport(transport)
-            logging.info(f"successful ssh connection")
-        except:
+            paramiko.SFTPClient.from_transport(transport)
+            logging.info("successful ssh connection")
+        except:  # noqa: E722
             status = "error with ssh connection"
             logging.error(status)
 
@@ -97,12 +97,12 @@ class sFTP:
         )
         # pattern = '*.csv'
         # iterate over sub-folders for csv files and download to a local path copy
-        for i, folder in enumerate(folders):
+        for _i, folder in enumerate(folders):
             # check formate is as expected, i.e. check folder name contains a digit (date)
             if bool(re.search(r"\d", folder)) is True:
                 # if folder doesn't exist locally create it
                 local_folder = f"{self.outdir}/{folder}"
-                os.makedirs(local_folder, exist_ok=True)
+                Path(folder).mkdir(parents=True, exist_ok=True)
                 # return et csv files within remote folder
                 remote_folder = f"{self.remote_data_folder}/{folder}"
                 file_list = self.sftp.listdir(remote_folder)
@@ -144,10 +144,10 @@ def identify_recent_folders(parent_folder: str) -> list:
         list: A list of recently downloaded folders (within the parent directory)
     """
     run_time = datetime.datetime.now().strftime("%Y%m%d")
-    sub_folders = glob.glob(parent_folder + "/*/")
+    sub_folders = Path(parent_folder).glob("*/")
     latest_folders = []
     # if folder modified time = run_time, i.e. recent downloaded files keep folder
-    for x, folder in enumerate(sub_folders):
+    for _x, folder in enumerate(sub_folders):
         modified_time = Path(folder).stat().st_mtime
         modified_time = datetime.datetime.fromtimestamp(modified_time).strftime(
             "%Y%m%d"
@@ -182,7 +182,7 @@ def return_recent_data_folders(parent_folder: str):
     ont_folders = []
     illumina_folders = []
     latest_folders = identify_recent_folders(parent_folder)
-    for x, folder in enumerate(latest_folders):
+    for _x, folder in enumerate(latest_folders):
         folder_name = Path(folder).name
         if identify_ont_folders(folder_name) is True:
             ont_folders.append(folder)
@@ -462,6 +462,8 @@ def process_results(local_dir: str) -> pd.DataFrame:
             "cdr_opie_id",
         ]
     )
+    print("!!!")
+    print(len(df_results))
     df_results["molis_id"] = df_results["molis_id"].str[0:10]  #
     df_results["ambiguity_score"] = df_results["ambiguity_score"].fillna(None)
     df_results["has_inserts"] = 1
