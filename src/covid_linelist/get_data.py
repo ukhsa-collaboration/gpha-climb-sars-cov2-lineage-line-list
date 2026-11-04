@@ -1,7 +1,6 @@
 import argparse
 import datetime
 import fnmatch
-import glob
 import json
 import logging
 import pathlib
@@ -27,7 +26,6 @@ def cli():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter, add_help=True
     )
-
     parser.add_argument(
         "--username",
         "-u",
@@ -459,8 +457,11 @@ def process_results(local_dir: str) -> pd.DataFrame:
             "cdr_opie_id",
         ]
     )
-    print("!!!")
-    print(len(df_results))
+    # if no new data, exit gracefully
+    if df_results.empty:
+        print("no new data")
+        sys.exit(0)
+    # continue if new data found
     df_results["molis_id"] = df_results["molis_id"].str[0:10]  #
     df_results["ambiguity_score"] = df_results["ambiguity_score"].fillna(None)
     df_results["has_inserts"] = 1
@@ -478,11 +479,11 @@ def concat_fasta(local_dir: str, date: str):
         fasta_files = Path(folder).glob("*/.fa*")
         fastas.append(fasta_files)
 
-    output_fas = open(f"{local_dir}/{date}_covid_ll.fasta", "w")  # noqa: SIM115
+    output_fas = open(f"{local_dir}/{date}_covid_ll.fasta", "w")  # noqa: PTH123, SIM115
     file_count = len(fastas)
     for f in fastas:
         file_count += 1
-        fh = open(f)  # noqa: PTH123
+        fh = open(f)  # noqa: PTH123, SIM115
         for line in fh:
             output_fas.write(line)
         fh.close()
@@ -531,7 +532,7 @@ def write_to_json(local_dir=str, df_metadata=pd.DataFrame, date=datetime.datetim
     df_metadata = df_metadata.assign(**action_columns)
     # Apply the custom function to each row of the DataFrame
     json_data = df_metadata.apply(create_nested_structure, axis=1).tolist()
-    with open(f"{local_dir}/{date}_covid_ll_for_ingest.jsonl", "w") as f:
+    with open(f"{local_dir}/{date}_covid_ll_for_ingest.jsonl", "w") as f:  # noqa: PTH123
         ## iterate through list of dictionaries
         ## write out as jsonl
         for record in json_data:
