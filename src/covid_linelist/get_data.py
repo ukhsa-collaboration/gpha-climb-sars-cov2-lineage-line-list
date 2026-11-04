@@ -313,7 +313,7 @@ def remove_ont_controls(df: pd.DataFrame) -> pd.DataFrame:
 
 def process_ont_results(list_ont_results_folders: list) -> pd.DataFrame:
     concat_ont_results_df = []
-    for x, folder in enumerate(list_ont_results_folders):
+    for _x, folder in enumerate(list_ont_results_folders):
         df = process_ont_results_folder(ont_results_folder=folder)
         concat_ont_results_df.append(df)
     df = pd.concat(concat_ont_results_df)
@@ -336,10 +336,7 @@ def return_date_from_illumina_folder(folder_name: str) -> str:
     """
     depth = folder_name.count("/") - 1
     date = folder_name.split("/")[depth].split("_")[0]
-    if len(date) == 8:
-        date = str(date)
-    else:
-        date = "20" + str(date)
+    date = str(date) if len(date) == 8 else "20" + str(date)
     logging.info(f"retrieved date from {folder_name} as {date}")
     return date
 
@@ -382,7 +379,7 @@ def process_illumina_fasta_files(
     consensus_fasta: str, parent_folder: str
 ) -> pd.DataFrame:
     data = defaultdict(list)
-    with open(consensus_fasta) as fasta:
+    with open(consensus_fasta) as fasta:  # noqa: PTH123
         for record in SeqIO.parse(fasta, "fasta"):
             run_id = parent_folder.split("/")[-2]
             taxon = str(record.id)
