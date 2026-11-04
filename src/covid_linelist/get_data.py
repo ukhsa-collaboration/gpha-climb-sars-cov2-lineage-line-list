@@ -397,14 +397,14 @@ def process_illumina_results_folder(illumina_results_folder):
     processed_results_dfs = []
     processed_fasta_dfs = []
 
-    illumina_results_dfs = glob.glob(illumina_results_folder + "/*.csv")
-    illumina_fasta_files = glob.glob(illumina_results_folder + "/*w_ins.fas")
+    illumina_results_dfs = Path(illumina_results_folder).glob("/*.csv")
+    illumina_fasta_files = Path(illumina_results_folder).glob("/*w_ins.fas")
 
-    for x, file in enumerate(illumina_results_dfs):
+    for _x, file in enumerate(illumina_results_dfs):
         df = process_illumina_results_df(illumina_results_df=file, date=date)
         processed_results_dfs.append(df)
 
-    for x, file in enumerate(illumina_fasta_files):
+    for _x, file in enumerate(illumina_fasta_files):
         df = process_illumina_fasta_files(
             consensus_fasta=file, parent_folder=illumina_results_folder
         )
