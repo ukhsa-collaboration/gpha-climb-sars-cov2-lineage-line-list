@@ -256,7 +256,7 @@ def match_ont_csv_with_samplesheet(
     Returns:
         pd.DataFrame: Merged DataFrame of ONT runs with info from samplesheet 
     """
-    barcode = ont_results_filename.split("barcode")[1].split(".")[0]
+    ont_results_filename.split("barcode")[1].split(".")[0]
     col_names = ["barcode", "molis_id"]
     df_samplesheet = pd.read_csv(
         sample_sheet, names=col_names, header=None, converters={"barcode": str}
@@ -269,7 +269,7 @@ def match_ont_csv_with_samplesheet(
 
 def process_ont_fasta_files(ont_consensus_fasta: str):
     data = defaultdict(list)
-    with open(ont_consensus_fasta) as fasta:
+    with open(ont_consensus_fasta) as fasta:  # noqa: PTH123
         for record in SeqIO.parse(fasta, "fasta"):
             run_id = ("_").join(str(record.id).split("/")[0].split("_")[0:-1])
             taxon = str(record.id).split("/")[0]
@@ -285,16 +285,16 @@ def process_ont_fasta_files(ont_consensus_fasta: str):
 def process_ont_results_folder(ont_results_folder):
     processed_result_dfs = []
     processed_fasta_dfs = []
-    ont_results_dfs = glob.glob(ont_results_folder + "/*report.csv")
-    ont_consensus_fastas = glob.glob(ont_results_folder + "/*consensus.fasta")
+    ont_results_dfs = Path(ont_results_folder).glob("*/report.csv")
+    ont_consensus_fastas = Path(ont_results_folder).glob("/*consensus.fasta")
 
-    sample_sheet = glob.glob(ont_results_folder + "/*samplesheet.csv")[0]
+    sample_sheet = Path(ont_results_folder).glob("/*samplesheet.csv")[0]
 
-    for x, file in enumerate(ont_results_dfs):
+    for _x, file in enumerate(ont_results_dfs):
         df = process_ont_results_df(ont_results_df=file, sample_sheet=sample_sheet)
         processed_result_dfs.append(df)
 
-    for x, file in enumerate(ont_consensus_fastas):
+    for _x, file in enumerate(ont_consensus_fastas):
         df = process_ont_fasta_files(ont_consensus_fasta=file)
         processed_fasta_dfs.append(df)
 
