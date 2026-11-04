@@ -100,7 +100,7 @@ class sFTP:
             if bool(re.search(r"\d", folder)) is True:
                 # if folder doesn't exist locally create it
                 local_folder = f"{self.outdir}/{folder}"
-                Path(folder).mkdir(parents=True, exist_ok=True)
+                Path(local_folder).mkdir(parents=True, exist_ok=True)
                 # return et csv files within remote folder
                 remote_folder = f"{self.remote_data_folder}/{folder}"
                 file_list = self.sftp.listdir(remote_folder)
@@ -129,7 +129,7 @@ class sFTP:
             else:
                 continue
         # Need to handle error: OSError: Not a directory
-
+    
 
 def identify_recent_folders(parent_folder: str) -> list:
     """Checks the last modified date of folders within the parent directory. If the modified date is the same as the current 
@@ -183,9 +183,9 @@ def return_recent_data_folders(parent_folder: str):
     for _x, folder in enumerate(latest_folders):
         folder_name = Path(folder).name
         if identify_ont_folders(folder_name) is True:
-            ont_folders.append(folder)
+            ont_folders.append(str(folder))
         else:
-            illumina_folders.append(folder)
+            illumina_folders.append(str(folder))
 
     logging.info(f"ont folders discovered: {', '.join(ont_folders)}")
     logging.info(f"illumina folders discovered: {', '.join(illumina_folders)}")
@@ -283,11 +283,11 @@ def process_ont_fasta_files(ont_consensus_fasta: str):
 def process_ont_results_folder(ont_results_folder):
     processed_result_dfs = []
     processed_fasta_dfs = []
-    ont_results_dfs = Path(ont_results_folder).glob("*/report.csv")
-    ont_consensus_fastas = Path(ont_results_folder).glob("/*consensus.fasta")
+    ont_results_dfs = [str(f.resolve()) for f in Path(ont_results_folder).rglob("*report.csv")]
+    ont_consensus_fastas = [str(f.resolve()) for f in Path(ont_results_folder).rglob("*consensus.fasta")]
 
-    sample_sheet = Path(ont_results_folder).glob("/*samplesheet.csv")[0]
-
+    sample_sheet = str(next(Path(ont_results_folder).glob("*samplesheet.csv")).resolve())
+    
     for _x, file in enumerate(ont_results_dfs):
         df = process_ont_results_df(ont_results_df=file, sample_sheet=sample_sheet)
         processed_result_dfs.append(df)
@@ -395,8 +395,8 @@ def process_illumina_results_folder(illumina_results_folder):
     processed_results_dfs = []
     processed_fasta_dfs = []
 
-    illumina_results_dfs = Path(illumina_results_folder).glob("/*.csv")
-    illumina_fasta_files = Path(illumina_results_folder).glob("/*w_ins.fas")
+    illumina_results_dfs = [str(f.resolve()) for f in Path(illumina_results_folder).rglob("*.csv")]
+    illumina_fasta_files = [str(f.resolve()) for f in Path(illumina_results_folder).rglob("*w_ins.fas")]
 
     for _x, file in enumerate(illumina_results_dfs):
         df = process_illumina_results_df(illumina_results_df=file, date=date)
@@ -435,7 +435,6 @@ def process_illumina_results(list_of_illumina_folders: list) -> pd.DataFrame:
 
 def process_results(local_dir: str) -> pd.DataFrame:
     ont_folders, illumina_folders = return_recent_data_folders(parent_folder=local_dir)
-
     # create empty DataFrame if no sub-folders in list of folder type
     if len(illumina_folders) != 0:
         df_illumina = process_illumina_results(illumina_folders)
