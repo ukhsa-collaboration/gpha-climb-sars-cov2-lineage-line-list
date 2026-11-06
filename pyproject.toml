@@ -1,6 +1,6 @@
 [project] 
 name = "gpha-climb-sars-cov2-lineage-line-list"
-version = "3.1.0"
+version = "3.1.1"
 description = "Create Covid lineage line list."
 authors = [{name = "Mike Brown", email = "michael.d.brown@ukhsa.gov.uk"}]
 requires-python = ">=3.12"
