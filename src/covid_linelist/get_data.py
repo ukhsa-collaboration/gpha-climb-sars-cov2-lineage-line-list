@@ -23,9 +23,7 @@ from Bio import SeqIO
 
 
 def cli():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter, add_help=True
-    )
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, add_help=True)
     parser.add_argument(
         "--username",
         "-u",
@@ -129,10 +127,10 @@ class sFTP:
             else:
                 continue
         # Need to handle error: OSError: Not a directory
-    
+
 
 def identify_recent_folders(parent_folder: str) -> list:
-    """Checks the last modified date of folders within the parent directory. If the modified date is the same as the current 
+    """Checks the last modified date of folders within the parent directory. If the modified date is the same as the current
     date of the pipeline being run the folder is saved to a list of latest_folders.
 
     Args:
@@ -147,13 +145,11 @@ def identify_recent_folders(parent_folder: str) -> list:
     # if folder modified time = run_time, i.e. recent downloaded files keep folder
     for _x, folder in enumerate(sub_folders):
         modified_time = Path(folder).stat().st_mtime
-        modified_time = datetime.datetime.fromtimestamp(modified_time).strftime(
-            "%Y%m%d"
-        )
+        modified_time = datetime.datetime.fromtimestamp(modified_time).strftime("%Y%m%d")
         if run_time == modified_time:
             latest_folders.append(folder)
     return latest_folders
- 
+
 
 def identify_ont_folders(run_name: str) -> bool:
     """Check the run name conforms to the ONT format
@@ -195,7 +191,9 @@ def return_recent_data_folders(parent_folder: str):
 ## ONT processing
 
 
-def process_ont_results_df(ont_results_df: pd.DataFrame, sample_sheet: pd.DataFrame) -> pd.DataFrame:
+def process_ont_results_df(
+    ont_results_df: pd.DataFrame, sample_sheet: pd.DataFrame
+) -> pd.DataFrame:
     """Generate a complete metadata dataframe of ONT run data within an ONT run folder
 
     Args:
@@ -252,7 +250,7 @@ def match_ont_csv_with_samplesheet(
         ont_results_df (pd.DataFrame): ONT results DataFrame
 
     Returns:
-        pd.DataFrame: Merged DataFrame of ONT runs with info from samplesheet 
+        pd.DataFrame: Merged DataFrame of ONT runs with info from samplesheet
     """
     ont_results_filename.split("barcode")[1].split(".")[0]
     col_names = ["barcode", "molis_id"]
@@ -284,10 +282,12 @@ def process_ont_results_folder(ont_results_folder):
     processed_result_dfs = []
     processed_fasta_dfs = []
     ont_results_dfs = [str(f.resolve()) for f in Path(ont_results_folder).rglob("*report.csv")]
-    ont_consensus_fastas = [str(f.resolve()) for f in Path(ont_results_folder).rglob("*consensus.fasta")]
+    ont_consensus_fastas = [
+        str(f.resolve()) for f in Path(ont_results_folder).rglob("*consensus.fasta")
+    ]
 
     sample_sheet = str(next(Path(ont_results_folder).glob("*samplesheet.csv")).resolve())
-    
+
     for _x, file in enumerate(ont_results_dfs):
         df = process_ont_results_df(ont_results_df=file, sample_sheet=sample_sheet)
         processed_result_dfs.append(df)
@@ -373,9 +373,7 @@ def process_illumina_results_df(illumina_results_df, date) -> pd.DataFrame:
     return df
 
 
-def process_illumina_fasta_files(
-    consensus_fasta: str, parent_folder: str
-) -> pd.DataFrame:
+def process_illumina_fasta_files(consensus_fasta: str, parent_folder: str) -> pd.DataFrame:
     data = defaultdict(list)
     with open(consensus_fasta) as fasta:  # noqa: PTH123
         for record in SeqIO.parse(fasta, "fasta"):
@@ -396,7 +394,9 @@ def process_illumina_results_folder(illumina_results_folder):
     processed_fasta_dfs = []
 
     illumina_results_dfs = [str(f.resolve()) for f in Path(illumina_results_folder).rglob("*.csv")]
-    illumina_fasta_files = [str(f.resolve()) for f in Path(illumina_results_folder).rglob("*w_ins.fas")]
+    illumina_fasta_files = [
+        str(f.resolve()) for f in Path(illumina_results_folder).rglob("*w_ins.fas")
+    ]
 
     for _x, file in enumerate(illumina_results_dfs):
         df = process_illumina_results_df(illumina_results_df=file, date=date)
