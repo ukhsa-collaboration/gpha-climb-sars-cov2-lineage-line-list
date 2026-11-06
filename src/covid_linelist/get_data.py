@@ -72,7 +72,7 @@ class sFTP:
         try:
             transport = paramiko.Transport((host, port))
             logging.info("successful transport client connection")
-        except:  # noqa: E722
+        except:
             status = "error creating transport client"
             logging.error(status)
 
@@ -81,7 +81,7 @@ class sFTP:
             transport.connect(None, self.username, self.password)
             paramiko.SFTPClient.from_transport(transport)
             logging.info("successful ssh connection")
-        except:  # noqa: E722
+        except:
             status = "error with ssh connection"
             logging.error(status)
 
@@ -265,7 +265,7 @@ def match_ont_csv_with_samplesheet(
 
 def process_ont_fasta_files(ont_consensus_fasta: str):
     data = defaultdict(list)
-    with open(ont_consensus_fasta) as fasta:  # noqa: PTH123
+    with open(ont_consensus_fasta) as fasta:
         for record in SeqIO.parse(fasta, "fasta"):
             run_id = ("_").join(str(record.id).split("/")[0].split("_")[0:-1])
             taxon = str(record.id).split("/")[0]
@@ -375,7 +375,7 @@ def process_illumina_results_df(illumina_results_df, date) -> pd.DataFrame:
 
 def process_illumina_fasta_files(consensus_fasta: str, parent_folder: str) -> pd.DataFrame:
     data = defaultdict(list)
-    with open(consensus_fasta) as fasta:  # noqa: PTH123
+    with open(consensus_fasta) as fasta:
         for record in SeqIO.parse(fasta, "fasta"):
             run_id = parent_folder.split("/")[-2]
             taxon = str(record.id)
@@ -531,7 +531,7 @@ def write_to_json(local_dir=str, df_metadata=pd.DataFrame, date=datetime.datetim
     df_metadata = df_metadata.assign(**action_columns)
     # Apply the custom function to each row of the DataFrame
     json_data = df_metadata.apply(create_nested_structure, axis=1).tolist()
-    with open(f"{local_dir}/{date}_covid_ll_for_ingest.jsonl", "w") as f:  # noqa: PTH123
+    with open(f"{local_dir}/{date}_covid_ll_for_ingest.jsonl", "w") as f:
         ## iterate through list of dictionaries
         ## write out as jsonl
         for record in json_data:
