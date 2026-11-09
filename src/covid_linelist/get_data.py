@@ -267,7 +267,7 @@ def match_ont_csv_with_samplesheet(
 
 def process_ont_fasta_files(ont_consensus_fasta: str):
     data = defaultdict(list)
-    with open(ont_consensus_fasta) as fasta:
+    with Path(ont_consensus_fasta).open as fasta:
         for record in SeqIO.parse(fasta, "fasta"):
             run_id = ("_").join(str(record.id).split("/")[0].split("_")[0:-1])
             taxon = str(record.id).split("/")[0]
