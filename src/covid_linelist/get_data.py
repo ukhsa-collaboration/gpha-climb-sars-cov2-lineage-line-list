@@ -377,7 +377,7 @@ def process_illumina_results_df(illumina_results_df, date) -> pd.DataFrame:
 
 def process_illumina_fasta_files(consensus_fasta: str, parent_folder: str) -> pd.DataFrame:
     data = defaultdict(list)
-    with open(consensus_fasta) as fasta:
+    with Path(consensus_fasta).open() as fasta:
         for record in SeqIO.parse(fasta, "fasta"):
             run_id = parent_folder.split("/")[-2]
             taxon = str(record.id)
