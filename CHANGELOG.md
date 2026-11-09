@@ -1,6 +1,16 @@
-GPHA CLIMB SARs-CoV2 Lineage Linelist
+# GPHA CLIMB SARs-CoV2 Lineage Linelist
+## 2026-11-09
 
-04.11.26: Debug
+### Changed
+- Changed open to path
+- Changed bare exceptions to SSHExceptions
+
+### Fixed
+
+### Added
+
+
+## 04.11.26: Debug
 
 Codebase:
 
