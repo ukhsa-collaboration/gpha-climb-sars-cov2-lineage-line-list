@@ -72,9 +72,9 @@ class sFTP:
         try:
             transport = paramiko.Transport((host, port))
             logging.info("successful transport client connection")
-        except:
-            status = "error creating transport client"
-            logging.error(status)
+        except (OSError, paramiko.SSHException):
+            logging.exception("error creating transport client")
+            raise
 
         logging.info("testing ssh connection")
         try:
