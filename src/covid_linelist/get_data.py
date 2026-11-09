@@ -533,7 +533,7 @@ def write_to_json(local_dir=str, df_metadata=pd.DataFrame, date=datetime.datetim
     df_metadata = df_metadata.assign(**action_columns)
     # Apply the custom function to each row of the DataFrame
     json_data = df_metadata.apply(create_nested_structure, axis=1).tolist()
-    with open(f"{local_dir}/{date}_covid_ll_for_ingest.jsonl", "w") as f:
+    with (Path(local_dir) / f"{date}_covid_ll_ingest.jsonl", "w") as f:
         ## iterate through list of dictionaries
         ## write out as jsonl
         for record in json_data:
