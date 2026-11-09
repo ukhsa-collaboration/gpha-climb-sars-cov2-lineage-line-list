@@ -81,9 +81,11 @@ class sFTP:
             transport.connect(None, self.username, self.password)
             paramiko.SFTPClient.from_transport(transport)
             logging.info("successful ssh connection")
-        except:
-            status = "error with ssh connection"
-            logging.error(status)
+        except (OSError, paramiko.SSHException):
+            logging.exception("error with ssh connection")
+            raise
+        finally:
+            transport.close()
 
     def get_sFTP_data(self, pattern: str):
         # return list of sub-folders within the remote data folder path
