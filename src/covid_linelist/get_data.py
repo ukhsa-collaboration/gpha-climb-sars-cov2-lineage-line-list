@@ -267,7 +267,7 @@ def match_ont_csv_with_samplesheet(
 
 def process_ont_fasta_files(ont_consensus_fasta: str):
     data = defaultdict(list)
-    with Path(ont_consensus_fasta).open as fasta:
+    with Path(ont_consensus_fasta).open() as fasta:
         for record in SeqIO.parse(fasta, "fasta"):
             run_id = ("_").join(str(record.id).split("/")[0].split("_")[0:-1])
             taxon = str(record.id).split("/")[0]
@@ -533,7 +533,7 @@ def write_to_json(local_dir=str, df_metadata=pd.DataFrame, date=datetime.datetim
     df_metadata = df_metadata.assign(**action_columns)
     # Apply the custom function to each row of the DataFrame
     json_data = df_metadata.apply(create_nested_structure, axis=1).tolist()
-    with (Path(local_dir) / f"{date}_covid_ll_ingest.jsonl", "w") as f:
+    with (Path(local_dir) / f"{date}_covid_ll_ingest.jsonl").open("w") as f:
         ## iterate through list of dictionaries
         ## write out as jsonl
         for record in json_data:
