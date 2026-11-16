@@ -3,6 +3,7 @@ import datetime
 import fnmatch
 import json
 import logging
+import os
 import pathlib
 import re
 import sys
@@ -13,11 +14,6 @@ from pathlib import Path
 import pandas as pd
 import paramiko
 from Bio import SeqIO
-
-## Data from the SARS-CoV-2 pipeline will be sent to an sFTP
-# ***REMOVED*** port 443
-# You can access with your email address and normal password but you need to use @phe.gov.uk instead of @ukhsa.gov.uk
-# If you do not already have access then you need to put in a service deskrequest
 
 ## arguments
 
@@ -46,16 +42,24 @@ def cli():
 
 
 ## connect to sFTP server
-
-
 class sFTP:
-    hostname = "***REMOVED***"
     remote_data_folder = "/GPHA/covid_sequencing/"
 
-    def __init__(self, username: str, password: str, outdir: str):
+    def __init__(
+        self,
+        username: str,
+        password: str,
+        outdir: str,
+    ):
+        self.hostname = os.getenv("CLIMB_HOSTNAME")
+
+        if not self.hostname:
+            raise ValueError("CLIMB_HOSTNAME environment variable is not set")
+
         self.username = username
         self.password = password
         self.outdir = outdir
+
         self.__check_connection()
         self.sftp = self.__connect_to_sFTP()
 
