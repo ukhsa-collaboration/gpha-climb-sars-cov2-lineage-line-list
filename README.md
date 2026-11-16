@@ -61,6 +61,8 @@ pip install -e ".[dev]"
 ## Usage
 
 ```bash
+## Set HOSTNAME for sftp folder:
+export SFTP_HOSTNAME=""
 ## get latest data from the SFTP
 get_data_covid_linelist --username forename.surname@ukhsa.gov.uk --outdir /path/to/output/dir/
 
