@@ -103,7 +103,7 @@ class sFTP:
             # check formate is as expected, i.e. check folder name contains a digit (date)
             if bool(re.search(r"\d", folder)) is True:
                 # if folder doesn't exist locally create it
-                local_folder = f"{self.outdir}/{folder}"
+                local_folder = Path(self.outdir) / folder
                 Path(local_folder).mkdir(parents=True, exist_ok=True)
                 # return et csv files within remote folder
                 remote_folder = f"{self.remote_data_folder}/{folder}"
