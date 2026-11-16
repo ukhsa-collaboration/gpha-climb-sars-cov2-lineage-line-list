@@ -51,10 +51,10 @@ class sFTP:
         password: str,
         outdir: str,
     ):
-        self.hostname = os.getenv("CLIMB_HOSTNAME")
+        self.hostname = os.getenv("SFTP_HOSTNAME")
 
         if not self.hostname:
-            raise ValueError("CLIMB_HOSTNAME environment variable is not set")
+            raise ValueError("SFTP_HOSTNAME environment variable is not set")
 
         self.username = username
         self.password = password
