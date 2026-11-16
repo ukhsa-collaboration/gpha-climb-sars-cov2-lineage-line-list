@@ -477,7 +477,7 @@ def process_results(local_dir: str) -> pd.DataFrame:
 
 
 def concat_fasta(local_dir: str, date: str):
-    sub_folders = Path(local_dir).glob("/*/")
+    sub_folders = Path(local_dir).glob("*/")
     sub_folders = [x for x in sub_folders if not x.startswith(f"{local_dir}/test.txt")]
     fastas = []
     for _x, folder in enumerate(sub_folders):
