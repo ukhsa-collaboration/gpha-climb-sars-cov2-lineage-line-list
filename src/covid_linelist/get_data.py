@@ -338,12 +338,11 @@ def return_date_from_illumina_folder(folder_name: str) -> str:
     Returns:
         str: Full 8 digit date of Illumina folder
     """
-    depth = folder_name.count("/") - 1
+    depth = folder_name.count("/") # - 1
     date = folder_name.split("/")[depth].split("_")[0]
     date = str(date) if len(date) == 8 else "20" + str(date)
     logging.info(f"retrieved date from {folder_name} as {date}")
     return date
-
 
 def process_illumina_results_df(illumina_results_df, date) -> pd.DataFrame:
     cols = [
