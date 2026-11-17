@@ -1,4 +1,15 @@
 # GPHA CLIMB SARs-CoV2 Lineage Linelist
+## 2026-11-16
+
+### Changed
+- Removed references
+- Minor edits to linting/consitency
+
+### Fixed
+
+### Added
+
+
 ## 2026-11-09
 
 ### Changed

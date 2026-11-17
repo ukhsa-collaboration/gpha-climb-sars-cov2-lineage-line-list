@@ -3,6 +3,7 @@ import datetime
 import fnmatch
 import json
 import logging
+import os
 import pathlib
 import re
 import sys
@@ -13,11 +14,6 @@ from pathlib import Path
 import pandas as pd
 import paramiko
 from Bio import SeqIO
-
-## Data from the SARS-CoV-2 pipeline will be sent to an sFTP
-# ***REMOVED*** port 443
-# You can access with your email address and normal password but you need to use @phe.gov.uk instead of @ukhsa.gov.uk
-# If you do not already have access then you need to put in a service deskrequest
 
 ## arguments
 
@@ -46,16 +42,24 @@ def cli():
 
 
 ## connect to sFTP server
-
-
 class sFTP:
-    hostname = "***REMOVED***"
     remote_data_folder = "/GPHA/covid_sequencing/"
 
-    def __init__(self, username: str, password: str, outdir: str):
+    def __init__(
+        self,
+        username: str,
+        password: str,
+        outdir: str,
+    ):
+        self.hostname = os.getenv("SFTP_HOSTNAME")
+
+        if not self.hostname:
+            raise ValueError("SFTP_HOSTNAME environment variable is not set")
+
         self.username = username
         self.password = password
         self.outdir = outdir
+
         self.__check_connection()
         self.sftp = self.__connect_to_sFTP()
 
@@ -99,7 +103,7 @@ class sFTP:
             # check formate is as expected, i.e. check folder name contains a digit (date)
             if bool(re.search(r"\d", folder)) is True:
                 # if folder doesn't exist locally create it
-                local_folder = f"{self.outdir}/{folder}"
+                local_folder = Path(self.outdir) / folder
                 Path(local_folder).mkdir(parents=True, exist_ok=True)
                 # return et csv files within remote folder
                 remote_folder = f"{self.remote_data_folder}/{folder}"
@@ -334,12 +338,11 @@ def return_date_from_illumina_folder(folder_name: str) -> str:
     Returns:
         str: Full 8 digit date of Illumina folder
     """
-    depth = folder_name.count("/") - 1
+    depth = folder_name.count("/") # - 1
     date = folder_name.split("/")[depth].split("_")[0]
     date = str(date) if len(date) == 8 else "20" + str(date)
     logging.info(f"retrieved date from {folder_name} as {date}")
     return date
-
 
 def process_illumina_results_df(illumina_results_df, date) -> pd.DataFrame:
     cols = [
@@ -473,8 +476,9 @@ def process_results(local_dir: str) -> pd.DataFrame:
 
 
 def concat_fasta(local_dir: str, date: str):
-    sub_folders = Path(local_dir).glob("/*/")
-    sub_folders = [x for x in sub_folders if not x.startswith(f"{local_dir}/test.txt")]
+    sub_folders = Path(local_dir).glob("*/")
+    excluded = Path(local_dir) / "test.txt"
+    sub_folders = [x for x in sub_folders if x != excluded]
     fastas = []
     for _x, folder in enumerate(sub_folders):
         fasta_files = Path(folder).glob("*/.fa*")
